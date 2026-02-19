@@ -35,7 +35,7 @@ spec:
           imagePullPolicy: IfNotPresent
           livenessProbe:
             httpGet:
-              path: /health
+              path: /actuator/health
               port: 7188
               scheme: HTTP
             initialDelaySeconds: 30
@@ -80,30 +80,6 @@ spec:
     - port: 8080
       targetPort: 8080
       name: api
-# ---
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: rust-server-health-ingress
-#   namespace: ${NAMESPACE}
-#   annotations:
-#     ingress.kubernetes.io/ssl-redirect: "false"
-#     # Use the default Traefik ingress class provided by k3s/k3d
-#     kubernetes.io/ingress.class: traefik
-# spec:
-#   ingressClassName: traefik
-#   rules:
-#     - host: ${HEALTH_INGRESS_URL}    #ex: localhost
-#       http:
-#         paths:
-#           - path: /health
-#             pathType: Prefix
-#             backend:
-#               service:
-#                 name: rust-server-api-health-service
-#                 port:
-#                   number: 7188
-#             pathType: ImplementationSpecific
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
