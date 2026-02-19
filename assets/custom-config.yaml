@@ -1,0 +1,115 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  health-check-port: 7188
+  use-docker-compose: false
+  docker-compose-file: "etc/docker-compose.yaml"
+
+  cors:
+    max-age: 3600
+    allow-credentials: true
+    allowed-methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    allowed-headers: "*"
+    allowed-origins_pattern: "http://localhost:8080,http://localhost:3000"
+
+security:
+  oauth2:
+    enabled: true
+    load-from-discovery-url: true
+    discovery-url: "http://localhost:7080/realms/rust-api/.well-known/openid-configuration"
+    issuer-uri: "http://localhost:7080/realms/rust-api"
+    jwks-uri: "http://localhost:8080/.well-known/jwks.json"
+    token-uri: "http://localhost:7080/realms/rust-api/protocol/openid-connect/token"
+    authorization-uri: "http://localhost:7080/realms/rust-api/protocol/openid-connect/auth"
+    introspection-uri: "http://localhost:7080/realms/rust-api/protocol/openid-connect/introspect" 
+    user_info-uri: "http://localhost:7080/realms/rust-api/protocol/openid-connect/userinfo"
+    end_session-uri: "http://localhost:7080/realms/rust-api/protocol/openid-connect/logout"
+
+    client:
+      id: "rust-client"
+      secret: "pLcQStmQ9HUyp75MFGZoIgyyfS2jmEkr"
+      scope: "openid email profile"
+
+    jwks:
+      keys:
+        - kid: "eqJRuJfgZAdt17mX9kX95Ydz6cpKstzP1esBEoKy4fU"
+          kty: "RSA"
+          alg: "RS256"
+          use: "sig"
+          e: "AQAB"
+          n: "mTirn7-ok4NXkZM1hjy4BjoTzm25iE1kzdseVQDsO-gYRoI9QOlJLtht_FUAQ2BvAJtGnqF1PD7_lO64hx6\
+              Lze96iQLeXLfj1NzgstZ7SSF3iQb33noA3Mn0VR-l0iyzTFDNNLSiXjo7wh_STrW8c3f36eevHoNjT1HmJx\
+              Al9XwJY_JpEzyc6jJqIt4251qspGtZcAUR9jxjGAMKM-ys3DrlGyFXWAkFNfcsbxlonlz1eD-OqdPFmgNdm\
+              A0cveU1MByl-yWhgXNiTDKxTjlNjU2m7imZxjK6dP3DUrraLBi1p-J9uoWwRzNpruQ_RQt35CM8yzN3d_bV\
+              cXcPpiyW6w"
+          x5c:
+            - "MIICnzCCAYcCBgGb19072jANBgkqhkiG9w0BAQsFADATMREwDwYDVQQDDAhydXN0LWFwaTAeFw0yNjAxMT\
+              kyMDA0MThaFw0zNjAxMTkyMDA1NThaMBMxETAPBgNVBAMMCHJ1c3QtYXBpMIIBIjANBgkqhkiG9w0BAQEFA\
+              AOCAQ8AMIIBCgKCAQEAmTirn7+ok4NXkZM1hjy4BjoTzm25iE1kzdseVQDsO+gYRoI9QOlJLtht/FUAQ2Bv\
+              AJtGnqF1PD7/lO64hx6Lze96iQLeXLfj1NzgstZ7SSF3iQb33noA3Mn0VR+l0iyzTFDNNLSiXjo7wh/STrW\
+              8c3f36eevHoNjT1HmJxAl9XwJY/JpEzyc6jJqIt4251qspGtZcAUR9jxjGAMKM+ys3DrlGyFXWAkFNfcsbx\
+              lonlz1eD+OqdPFmgNdmA0cveU1MByl+yWhgXNiTDKxTjlNjU2m7imZxjK6dP3DUrraLBi1p+J9uoWwRzNpr\
+              uQ/RQt35CM8yzN3d/bVcXcPpiyW6wIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQCQ0YgTArDRqAD3DZMBbKJg\
+              OFKlRHBZgYM05mygwoTENx5QLxFhNgVpB/Td3iO6n/RbVOCVeEtKZO1O2IAHYW64ISDhVNzyE3BkjX1CQnu\
+              yfGMJpOAB+Dt9ibmZfCR1ZMM6mOEY43vUVYngw2kz8L8bPLMtL//H5LTz4ovvuBHgzKKBJLcfX4sZ4I0XRo\
+              j0q6zA8Tu2loWUuRQAsa+pm/SRYNfjrAWiDUz8Lhh/Di0wDKKx9+kwj2ZHAJB2GuMWTzIZPq88CKYJ+whlV\
+              /KNBDhTo1ocDj/Qav3iMo3LAs0XoR/PizZgsHLlUGbY+nt2NtF45cQloJqk0u32IdhOUFq3"
+
+data:
+  redis:
+    enabled: true
+    host: "localhost"
+    port: 6379
+    client-type: "lettuce"
+    lettuce:
+      pool:
+        enabled: true
+        min-idle: 1
+        max-active: 4
+        max-idle: 2
+    repositories:
+      enabled: false
+
+  databases:
+    - name: "api"
+      enabled: true
+      url: "postgres://user_api:secret@localhost:5434/api_database"
+      min-pool-size: 5
+      max-pool-size: 20
+      logging: false
+      aquire-timeout: 8
+      max-lifetime: 10
+      idle-timeout: 8
+      connect-timeout: 5
+      logging-level: "error"
+    
+    - name: "jobs"
+      enabled: false
+      url: "postgres://user_api:secret@localhost:5434/jobs_database"
+      min-pool-size: 5
+      max-pool-size: 20
+      logging: false
+      aquire-timeout: 8
+      max-lifetime: 10
+      idle-timeout: 8
+      connect-timeout: 5
+      logging-level: "error"
+
+  bigquery:
+    enabled: false
+    print-tables: true
+    region: "southamerica-east1"
+    project: "my-project-id"
+    credential: >
+      ewogICJ0eXBlIjogInNlcnZpY2VfYWNjb3VudCIsCiAgInByb2plY3RfaWQiOiAiYnItbWVjLXNlZ2FwZS1kZXYiLAog
+      ICJwcml2YXRlX2tleV9pZCI6ICI1MzdiOTIwZjUwZWMyMjBkYzIzMGNmZjQ2MjllMTJhNzA5ZTNiNWRmIiwKICAicHJp
+      dmF0ZV9rZXkiOiAiLS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tXG5NSUlFdlFJQkFEQU5CZ2txaGtpRzl3MEJBUUVG
+      QUFTQ0JLY3dnZ1NqQWdFQUFvSUJBUURDWU1ZVkhyMWdwRTdTXG4zaFcvSzlRL204QTIweWE1STJlQXpBTW1ESjRlTVRq
+      Q1FZV1ZGQ0iCn0=
+    dataset:
+      - "my_project_dataset"
+      - "my_another_dataset"
+
+metrics:
+  enabled: true
+  app-name: ""

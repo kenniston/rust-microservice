@@ -1,0 +1,19 @@
+# (1) starting from Busybox
+FROM nexus:5005/alpine:latest
+
+# (2) installing runtime utils
+RUN apk add --no-cache curl nano
+
+# (3) configure groups and users
+RUN addgroup -g 1001 app && adduser -u 1001 -G app -S app
+
+# (4) copying binary
+WORKDIR /app
+COPY --chmod=0755 ./.binaries/server /app/server
+COPY ./assets/* /app/assets/
+
+# (5) configure groups and users
+USER app:app
+
+# (6) running binary
+CMD ["/app/server", "--config-file=config.yaml", "run"]

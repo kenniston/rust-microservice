@@ -1,0 +1,12 @@
+projects:
+  - id: test-project
+    datasets:
+      - id: test_dataset
+        tables:
+          - id: usuario
+            columns:
+              - name: id_pessoa
+                type: STRING
+                mode: REQUIRED
+            data:
+              - id_pessoa: "9de4391300315fa925433bd9a902f4c350dd6c05a85bf8095f0569a45ce961c2"

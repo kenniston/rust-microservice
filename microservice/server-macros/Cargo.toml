@@ -1,0 +1,22 @@
+[package]
+name = "server-macros"
+version = "0.1.0"
+edition = "2024"
+description = "A set of macros for generating code for the microservices framework."
+documentation = "https://docs.rs/server-macros"
+repository = "https://github.com/kenniston/server-framework/server-macros"
+readme = "README.md"
+license = "MIT"
+keywords = ["code-gen", "macros", "initialization", "mapper", "api"]
+categories = ["web-programming", "web-programming::http-server"]
+authors = ["Kenniston Arraes Bonfim"]
+rust-version = "1.91.1"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0.111", features = ["full", "extra-traits"] }
+quote = "1.0.42"
+proc-macro2 = "1.0.103"
+walkdir = "2.4.0"

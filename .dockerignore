@@ -1,0 +1,21 @@
+# Rust build artifacts
+target/
+**/target/
+
+# Cargo cache and configuration directories
+.cargo/
+**/.cargo/
+
+# Local development and environment files
+.env
+.DS_Store
+.vscode/
+.idea/
+
+# Version control
+.git/
+.gitignore
+
+# Docker-specific files
+Dockerfile
+.dockerignore

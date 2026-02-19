@@ -1,0 +1,36 @@
+server:
+  host: "0.0.0.0"
+  port: 7777
+  health-check-port: 7188
+  use-docker-compose: false
+  docker-compose-file: "etc/docker-compose.yaml"
+
+  cors:
+    max-age: 3600
+    allow-credentials: true
+    allowed-methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    allowed-headers: "accept, authorization, content-type"
+    allowed-origins_pattern: "http://localhost:8080,http://localhost:3000"
+
+security:
+  oauth2:
+    enabled: true
+    discovery-enabled: true
+
+data:
+  databases:
+    - name: "api"
+      enabled: true
+      url: "postgres://user_api:secret@localhost:5432/api_database"
+      min-pool-size: 30
+      max-pool-size: 90
+      #aquire-timeout: 15
+      #max-lifetime: 8
+      #idle-timeout: 8
+      #connect-timeout: 8
+      logging: false
+      logging-level: "info"
+
+metrics:
+  enabled: true
+  app-name: ""

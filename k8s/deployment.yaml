@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rust-server-api-cfg
+  namespace: ${NAMESPACE}
+data:
+  B64_CONFIG_FILE: ${B64_CONFIG_FILE}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rust-server-api-secret
+  namespace: ${NAMESPACE}
+data:
+  SUPER_SECRET: "MTIzNDU2"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rust-server-api-service
+  namespace: ${NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rust-server-api-backend
+  template:
+    metadata:
+      labels:
+        app: rust-server-api-backend
+    spec:
+      containers:
+        - name: rust-server-api
+          image: ${IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7188
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 1
+          ports:
+            - containerPort: 8080
+              name: api
+            - containerPort: 7188
+              name: health
+          envFrom:
+            - configMapRef:
+                name: rust-server-api-cfg
+            - secretRef:
+                 name: rust-server-api-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rust-server-api-health-service
+  namespace: ${NAMESPACE}
+spec:
+  selector:
+    app: rust-server-api-backend
+  type: ClusterIP
+  ports:
+    - port: 7188
+      targetPort: 7188
+      name: health
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rust-server-api-service
+  namespace: ${NAMESPACE}
+spec:
+  selector:
+    app: rust-server-api-backend
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: api
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: rust-server-health-ingress
+#   namespace: ${NAMESPACE}
+#   annotations:
+#     ingress.kubernetes.io/ssl-redirect: "false"
+#     # Use the default Traefik ingress class provided by k3s/k3d
+#     kubernetes.io/ingress.class: traefik
+# spec:
+#   ingressClassName: traefik
+#   rules:
+#     - host: ${HEALTH_INGRESS_URL}    #ex: localhost
+#       http:
+#         paths:
+#           - path: /health
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: rust-server-api-health-service
+#                 port:
+#                   number: 7188
+#             pathType: ImplementationSpecific
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-prefix
+  namespace: ${NAMESPACE}
+spec:
+  stripPrefix:
+    prefixes:
+      - /api
+      - /actuator
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rust-server-api-ingress
+  namespace: ${NAMESPACE}
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "false"
+    
+    # Format: <namespace>-<middleware-name>@kubernetescrd
+    # traefik.ingress.kubernetes.io/router.middlewares: ${NAMESPACE}-strip-prefix@kubernetescrd 
+    
+    # Use the default Traefik ingress class provided by k3s/k3d
+    kubernetes.io/ingress.class: traefik
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ${INGRESS_URL}    #ex: localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rust-server-api-service
+                port:
+                  number: 8080
+            pathType: ImplementationSpecific
+          - path: /actuator
+            pathType: Prefix
+            backend:
+              service:
+                name: rust-server-api-health-service
+                port:
+                  number: 7188
+            pathType: ImplementationSpecific

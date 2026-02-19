@@ -1,0 +1,5 @@
+### JetBrains+all ###
+.idea/*
+
+# Target files
+/target

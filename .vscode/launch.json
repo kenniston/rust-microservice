@@ -1,0 +1,147 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        ////////////////////////
+        // GDB DEBUG SECTION
+        ////////////////////////
+        {
+            "name": "GDB executable 'server'",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/server",
+            "stopAtEntry": false,
+            "args": [
+                "--config-file=assets/custom-config.yaml",
+                "run"
+            ],
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "rust-gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": false
+                }
+            ],
+            "preLaunchTask": "rust: cargo build",
+            "environment": [
+                {
+                    "name": "RUST_BACKTRACE",
+                    "value": "0"
+                },
+                {
+                    "name": "RUST_LOG",
+                    "value": "info,actix_web=error,actix_web_prom=error"
+                }
+            ]
+        },
+        {
+            "name": "GDB Integration Test 'server'",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/deps/mod-718a1a79dc07610f",
+            "stopAtEntry": false,
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "rust-gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "rust: cargo test mod",
+            "environment": [
+                {
+                    "name": "RUST_BACKTRACE",
+                    "value": "0"
+                },
+                {
+                    "name": "RUST_LOG",
+                    "value": "debug,actix_web=error,actix_web_prom=error,testcontainers=info,reqwest=info,hyper_util=info,bollard=info,rustls=info,microservice::data::database=info,seaorm=info,sqlx::pool=debug,sea_orm::driver::sqlx_postgres=info"
+                }
+            ]
+        },
+        ////////////////////////
+        // LLDB DEBUG SECTION - IMPORTANT: DIFICULT TO DEBUG LARGE BINARIES. USE GDB INSTEAD.
+        ////////////////////////
+        {
+            "name": "Debug unit tests in library 'microservice'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=server-framework"
+                ]
+            }
+        },
+        {
+            "name": "Debug executable 'server'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=server",
+                    "--package=api-server"
+                ]
+            },
+            "args": [
+                "--config-file=assets/poc-custom-config.yaml",
+                "run"
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_BACKTRACE": "1",
+                "RUST_LOG": "info,actix_web=error,actix_web_prom=error",
+                "LLDB_USE_NATIVE_PDB_READER": "1"
+            }
+        },
+        {
+            "name": "Debug tests in executable 'server'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--bin=server",
+                    "--package=api-server"
+                ]
+            },
+            "env": {
+                "RUST_BACKTRACE": "1",
+                "RUST_LOG": "info,actix_web=error,actix_web_prom=error"
+            }
+        },
+        {
+            "name": "Debug Integration Test 'server'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test",
+                    "mod"
+                ]
+            },
+            "env": {
+                "RUST_BACKTRACE": "0",
+                "RUST_LOG": "info,actix_web=error,actix_web_prom=error"
+            }
+        }
+    ]
+}

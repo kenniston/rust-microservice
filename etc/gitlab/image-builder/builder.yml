@@ -1,0 +1,24 @@
+stages:
+  - build
+
+services:
+  - name: nexus:5005/docker:29.2.0-dind
+    alias: docker
+    command: [
+      "--tls=false",
+      "--insecure-registry=nexus:5005"
+    ]
+
+docker build and push:
+  stage: build
+  rules:
+    - if: $CI_COMMIT_TAG
+  image: nexus:5005/docker:29.2.0
+  tags:
+    - docker
+  before_script:
+    - until docker info; do sleep 1; done;
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build --no-cache --pull -t $CI_BUILDER_BASE_URL/$CI_PROJECT_NAME:$CI_COMMIT_TAG --build-arg CI_BUILDER_BASE_URL=${CI_BUILDER_BASE_URL} .
+    - docker push $CI_BUILDER_BASE_URL/$CI_PROJECT_NAME:$CI_COMMIT_TAG

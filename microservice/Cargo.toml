@@ -1,0 +1,67 @@
+[package]
+name = "microservice"
+version = "0.1.0"
+edition = "2024"
+description = "A microservices framework in Rust whichs provides common functionalities for developing Web APIs."
+documentation = "https://docs.rs/server-framework"
+repository = "https://github.com/kenniston/server-framework"
+readme = "README.md"
+license = "MIT"
+keywords = ["http", "microservices", "mvc", "server", "api"]
+categories = ["web-programming", "web-programming::http-server"]
+authors = ["Kenniston Arraes Bonfim"]
+rust-version = "1.93.0"
+
+[features]
+memory-database = []
+
+[dependencies]
+server-macros = { path = "server-macros", version = "0.1.0" }
+clap = { version = "4.5.55", features = ["derive", "color", "help", "env"] }
+rust-embed = { version = "8.11.0", features = [
+    "interpolate-folder-path",
+    "debug-embed",
+] }
+anstyle = "1.0.13"
+actix-cors = "0.7.1"
+actix-web = "4.12.0"
+actix-web-prom = "0.10.0"
+tokio = { version = "1.49.0", features = ["full"] }
+serde = "1.0.228"
+serde_json = "1.0.149"
+serde_yaml = "0.9.34-deprecated"
+config = "0.15.19"
+base64 = "0.22.1"
+colored = "3.1.1"
+compose-rs = "0.0.4"
+env_logger = "0.11.8"
+utoipa = { version = "5.4.0", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web"] }
+prometheus = { version = "0.14.0", features = ["process"] }
+tracing = "0.1.44"
+log = { version = "0.4.29", features = ["serde"] }
+sysinfo = "0.38.0"
+google-cloud-bigquery = { package = "gcloud-bigquery", version = "1.5.0" }
+once_cell = "1.21.3"
+sea-orm = { version = "2.0.0-rc.32", features = [
+    "sqlx-postgres",
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+    "macros",
+    "mock",
+] }
+thiserror = "2.0.18"
+chrono = "0.4.42"
+testcontainers = { version = "0.26.3", features = ["blocking", "http_wait"] }
+testcontainers-modules = { version = "0.14.0", features = [
+    "redis",
+    "postgres",
+    "mysql",
+    "mongo",
+] }
+jsonwebtoken = "10.2.0"
+regex = "1.12.3"
+openssl = { version = "0.10.75", features = ["vendored"] }
+reqwest = { version = "0.13.2", features = ["json", "blocking", "form"] }
+reqwest-tracing = "0.7.0"
+reqwest-middleware = "0.5.1"

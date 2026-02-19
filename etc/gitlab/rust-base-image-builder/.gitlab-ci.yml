@@ -1,0 +1,3 @@
+include:
+  - project: '${CI_TEMPLATES_HOME}/builder'
+    file: '/builder.yml'

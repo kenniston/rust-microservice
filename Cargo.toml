@@ -1,0 +1,84 @@
+[workspace]
+members = ["microservice", "microservice/server-macros"]
+
+[package]
+name = "api-server"
+version = "0.2.0"
+edition = "2024"
+description = "A microservice Web API using the MVC pattern."
+documentation = "https://docs.rs/rust-server-api"
+repository = "https://github.com/kenniston/rust-server-api"
+readme = "README.md"
+license = "MIT"
+keywords = ["http", "microservices", "mvc", "server", "api"]
+categories = ["web-programming", "web-programming::http-server"]
+authors = ["Kenniston Arraes Bonfim"]
+rust-version = "1.93.0"
+
+[[bin]]
+name = "server"
+path = "src/main.rs"
+
+[lib]
+name = "server_lib"
+path = "src/lib.rs"
+
+[dependencies]
+microservice = { path = "microservice", version = "0.1.0" }
+rust-embed = { version = "8.9.0", features = [
+    "interpolate-folder-path",
+    "debug-embed",
+] }
+actix-web = "4.12.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.146"
+tokio = { version = "1.49.0", features = ["full"] }
+sea-orm = { version = "2.0.0-rc.32", features = [
+    "sqlx-postgres",
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+    "macros",
+    "debug-print",
+] }
+utoipa = "5.4.0"
+utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web"] }
+google-cloud-bigquery = { package = "gcloud-bigquery", version = "1.5.0" }
+base64 = "0.22.1"
+tracing = "0.1.44"
+thiserror = "2.0.18"
+derive_more = "2.1.1"
+colored = "3.0.0"
+env_logger = "0.11.8"
+log = { version = "0.4.29", features = ["serde"] }
+reqwest = { version = "0.13.2", features = ["json", "blocking", "form"] }
+reqwest-tracing = "0.7.0"
+reqwest-middleware = "0.5.1"
+
+[dev-dependencies]
+testcontainers = { version = "0.26.3", features = ["blocking", "http_wait"] }
+testcontainers-modules = { version = "0.14.0", features = [
+    "redis",
+    "postgres",
+    "mysql",
+    "mongo",
+] }
+tokio = { version = "1.48.0", features = ["full"] }
+ctor = "0.6.3"
+chrono = "0.4.42"
+asserting = "0.12.0"
+
+[profile.release]
+strip = true
+#opt-level = "s"
+debug = false
+lto = true
+#codegen-units = 1
+
+[profile.dev.package."*"]
+debug = 0
+debug-assertions = false
+overflow-checks = false
+split-debuginfo = "unpacked"
+
+[target.x86_64-unknown-linux-musl]
+linker = "musl-gcc"

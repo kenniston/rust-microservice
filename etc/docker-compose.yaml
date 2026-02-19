@@ -1,0 +1,251 @@
+name: rustapi
+
+services:
+  postgres:
+    container_name: rustapi_PostgreSQL
+    image: postgres:alpine
+    hostname: postgres
+    restart: unless-stopped
+    healthcheck:
+      test: pg_isready -U postgres -d keycloak
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - type: volume
+        source: postgres
+        target: /var/lib/postgresql/data
+      - type: bind
+        source: ./.initdb
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+        consistency: consistent
+    environment:
+      - TZ=America/Sao_Paulo
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - mynetwork
+
+  redis:
+    container_name: rustapi_Redis
+    image: redis:alpine
+    hostname: redis
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: redis
+        target: /data
+    ports:
+      - "6379:6379"
+    networks:
+      - mynetwork
+
+  mailpit:
+    container_name: rustapi_Mailpit
+    hostname: mailpit
+    image: axllent/mailpit
+    restart: unless-stopped
+    healthcheck:
+      test: wget --spider http://localhost:8025
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    volumes:
+      - type: volume
+        source: mailpit
+        target: /data
+    ports:
+      - "7025:8025" # rest
+      - "1025:1025" # smtp
+      - "2110:1110" # pop3
+    environment:
+      TZ: America/Sao_Paulo
+      MP_MAX_MESSAGES: 500
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: true
+      MP_SMTP_AUTH_ALLOW_INSECURE: true
+    networks:
+      - mynetwork
+
+  keycloak:
+    container_name: rustapi_Keycloak
+    image: quay.io/keycloak/keycloak:26.5.0
+    hostname: keycloak
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+    volumes:
+      - type: bind
+        source: ./realm-export.json
+        target: /opt/keycloak/data/import/realm-export.json
+        read_only: true
+        consistency: consistent
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+    healthcheck:
+      test: /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password 123456
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    environment:
+      TZ: America/Sao_Paulo
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: 123456
+      KC_HTTP_HOST: 0.0.0.0
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: false
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_DB_POOL_MIN_SIZE: 0
+      KC_DB_POOL_MAX_SIZE: 10
+      KC_DB_POOL_INITIAL_SIZE: 1
+      KC_LOG_CONSOLE_COLOR: true
+      KC_LOG_LEVEL: INFO
+      KC_CACHE: local
+      KC_FEATURES: scripts
+    command:
+      - "start-dev"
+      - "--import-realm"
+    ports:
+      - "7080:8080"
+    networks:
+      - mynetwork
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: rustapi_tempo
+    command: -config.file=/etc/tempo.yaml
+    volumes:
+      - tempo-data:/var/tempo
+      - ./telemetry/tempo/tempo-config.yaml:/etc/tempo.yaml
+    ports:
+      - "14268:14268" # Jaeger Thrift HTTP
+      - "14250:14250" # Jaeger GRPC
+      - "4317:4317" # OpenTelemetry gRPC
+      - "4318:4318" # OpenTelemetry HTTP
+      - "9411:9411" # Zipkin
+      - "3200:3200" # HTTP connection
+    restart: unless-stopped
+    networks:
+      - mynetwork
+
+  grafana:
+    image: grafana/grafana-oss
+    container_name: rustapi_grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    volumes:
+      - ./telemetry/grafana/datasources:/etc/grafana/provisioning/datasources/
+      - ./telemetry/grafana/provisioning/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./telemetry/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana-storage:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - mynetwork
+    depends_on:
+      - tempo
+      - prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  pyroscope:
+    image: grafana/pyroscope:latest
+    container_name: rustapi_pyroscope
+    ports:
+      - "4040:4040" # open port to access frontend
+    command:
+      - "server" # run pyroscope in server mode
+    restart: unless-stopped
+    networks:
+      - mynetwork
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: rustapi_prometheus
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
+    volumes:
+      - ./telemetry/prometheus/prometheus.yaml:/etc/prometheus.yaml
+    ports:
+      - "9090:9090"
+    networks:
+      - mynetwork
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  loki:
+    image: grafana/loki
+    container_name: rustapi_loki
+    command: [ "-config.file=/mnt/config/loki-config.yaml" ]
+    volumes:
+      - ./telemetry/loki/loki-config.yaml:/mnt/config/loki-config.yaml
+    ports:
+      - "3100:3100" # HTTP
+      - "9096:9096" # GRPC
+    networks:
+      - mynetwork
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  apiserver_db:
+    image: postgres:alpine
+    container_name: rustapi_apiserver_db
+    restart: unless-stopped
+    healthcheck:
+      test: pg_isready -U user_api -d api_database
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - type: volume
+        source: apiserver-postgres-data
+        target: /var/lib/postgresql/data
+      - type: bind
+        source: ./.api-initdb
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+        consistency: consistent
+    environment:
+      - TZ=America/Sao_Paulo
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5434:5432"
+    networks:
+      - mynetwork
+
+volumes:
+  postgres:
+  redis:
+  mailpit:
+  tempo-data:
+  grafana-storage:
+  apiserver-postgres-data:
+
+
+networks:
+  mynetwork:

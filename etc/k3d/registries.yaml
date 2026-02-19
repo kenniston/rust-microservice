@@ -1,0 +1,12 @@
+mirrors:
+  "nexus:5005":
+    endpoint:
+      - "http://nexus:5005"
+
+configs:
+  "nexus:5005":
+    auth:
+      username: gitlab
+      password: 123456
+    tls:
+      insecure_skip_verify: true

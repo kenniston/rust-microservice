@@ -1,0 +1,144 @@
+name: rust-gitlab-ci
+
+services:
+  gitlab:
+    image: gitlab/gitlab-ce
+    container_name: gitlab
+    restart: always
+    hostname: 'gitlab.server'
+    environment:
+      GITLAB_LOG_LEVEL: "WARN"
+      GITLAB_ROOT_PASSWORD: NYVb6CCfxq3b
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url "https://gitlab.server"
+        # registry_external_url "https://registry.gitlab.server:5050"
+
+        ## Nginx Configuration
+        nginx['enable'] = true
+        nginx['redirect_http_to_https'] = false
+        nginx['redirect_http_to_https_port'] = 80
+        nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlab.server.crt"
+        nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab.server.key"
+
+        ## Performance Tuning
+        puma['worker_processes'] = 0
+        puma['exporter_enabled'] = false
+        sidekiq['concurrency'] = 10
+        sidekiq['metrics_enabled'] = false
+        gitlab_kas['enable'] = false
+        prometheus['enable'] = false
+        alertmanager['enable'] = false
+        redis_exporter['enable'] = false
+        postgres_exporter['enable'] = false
+        gitlab_exporter['enable'] = false
+        prometheus_monitoring['enable'] = false
+
+        ## SSL
+        # letsencrypt['enable'] = true
+        # letsencrypt['contact_emails'] = ["admin.gitlab@gmail.com"]
+        # letsencrypt['wwwroot'] = "/var/opt/gitlab/nginx/www"
+        # letsencrypt['key_size'] = 2048
+        # letsencrypt['auto_renew'] = true
+        # letsencrypt['auto_renew_log_directory'] = "/var/log/gitlab/lets-encrypt"
+
+        ## Container Registry
+        # gitlab_rails['registry_enabled'] = true
+        # gitlab_rails['registry_port'] = "5050"
+        # gitlab_rails['registry_host'] = "registry.gitlab.server"
+        # registry['enable'] = true
+        # registry['dir'] = "/var/opt/gitlab/registry"
+        # registry['log_directory'] = "/var/log/gitlab/registry"
+        # registry['log_level'] = "info"
+        # registry['username'] = "registry"
+        # registry['group'] = "registry"
+        # registry_nginx['enable'] = true
+        # registry_nginx['ssl_certificate'] = "/etc/gitlab/ssl/gitlab.server.crt"
+        # registry_nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/gitlab.server.key"
+    ports:
+      - '80:80'
+      - '443:443'
+      - '22:22'
+      #- '5050:5050'
+    volumes:
+      - '~/gitlab/config:/etc/gitlab'
+      - '~/gitlab/logs:/var/log/gitlab'
+      - '~/gitlab/data:/var/opt/gitlab'
+      - '~/gitlab/ssl:/etc/gitlab/ssl:ro'
+    shm_size: '256m'
+    networks:
+      - gitlab
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner
+    container_name: gitlab-runner
+    restart: unless-stopped
+    links:
+      - gitlab
+    volumes:
+      - '~/gitlab/runner/config:/etc/gitlab-runner'
+      - '~/gitlab/ssl:/etc/gitlab-runner/certs:ro'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    networks:
+      - gitlab
+    depends_on:
+      - gitlab
+
+  nexus:
+    image: sonatype/nexus3
+    container_name: nexus
+    restart: always
+    ports:
+      - "8081:8081"
+      - "5005:5005"
+    networks:
+      - gitlab
+    volumes:
+      - '~/gitlab/nexus:/nexus-data'
+
+  sonarqube:
+    #login: admin, password: admin. After login, change password to @NYVb6CCfxq3b
+    image: sonarqube:community
+    deploy:
+      resources:
+        reservations:
+          memory: 4g
+    container_name: sonarqube
+    restart: unless-stopped
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://sonarqube_db:5432/sonar
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=sonar
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - '~/gitlab/sonarqube/data:/opt/sonarqube/data'
+      - '~/gitlab/sonarqube/extensions:/opt/sonarqube/extensions'
+      - '~/gitlab/sonarqube/logs:/opt/sonarqube/logs'
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9001:9000"
+    networks:
+      - gitlab
+    depends_on:
+      - sonarqube_db
+
+  sonarqube_db:
+    image: postgres:alpine
+    container_name: sonarqube_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+      - POSTGRES_DB=sonar
+    volumes:
+      - '~/gitlab/sonarqube/postgres:/var/lib/postgresql'
+      - '~/gitlab/sonarqube/postgres-data:/var/lib/postgresql/data'
+    networks:
+      - gitlab
+
+networks:
+  gitlab:
+
+

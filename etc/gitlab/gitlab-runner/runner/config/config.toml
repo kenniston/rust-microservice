@@ -1,0 +1,53 @@
+concurrent = 1
+check_interval = 0
+shutdown_timeout = 0
+
+[session_server]
+session_timeout = 1800
+
+[[runners]]
+name = "linux_docker"
+url = "https://gitlab.server/"
+id = 1
+token = "glrt-sGGsr12ZIwG0IcQWeyqK7m86MQp0OjEKdToxCw.01.120tby21a"
+token_obtained_at = 2026-01-30T15:26:36Z
+token_expires_at = 2027-01-30T15:26:36Z
+executor = "docker"
+tls-ca-file = "/etc/gitlab-runner/certs/gitlab.server.crt"
+tls-skip-verify = true
+
+environment = [
+  "FF_NETWORK_PER_BUILD=1",
+  "DOCKER_HOST=tcp://docker:2375",
+  "DOCKER_CERT_PATH=",
+  "DOCKER_TLS_CERTDIR=",
+  "DOCKER_DRIVER=overlay2",
+  "DOCKER_AUTH_CONFIG={\"auths\":{\"nexus:5005\":{\"auth\":\"Z2l0bGFiOjEyMzQ1Ng==\"}}}"
+]
+
+[runners.cache]
+MaxUploadedArchiveSize = 0
+
+[runners.cache.s3]
+[runners.cache.gcs]
+[runners.cache.azure]
+
+[runners.docker]
+tls_verify = false
+image = "nexus:5005/docker:29.2.0"
+privileged = true
+disable_entrypoint_overwrite = false
+oom_kill_disable = false
+disable_cache = false
+volumes = [
+    "/cache"
+]
+shm_size = 0
+network_mtu = 0
+extra_hosts = ["gitlab.server:172.17.0.1"]
+network_mode = "rust-gitlab-ci_gitlab"  # <==== MUST BE ON THE SAME NETWORK AS THE GITLAB CONTAINER
+command = [
+    "--tls=false",
+    "--insecure-registry=nexus:5005"
+]
+
