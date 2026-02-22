@@ -1,137 +1,206 @@
-# Rust Server API
+<div align="center">
 
-![rust](https://badgen.net/badge/Rust%20Edition/2024/red?scale=1.2) ![rust](https://badgen.net/badge/Rust/1.91.1/blue?scale=1.2) ![cargo](https://badgen.net/badge/Cargo/1.91.1/gray?scale=1.2) ![spring-boot](https://badgen.net/badge/Version/0.1.0/green?scale=1.2)
+  <img alt="Rust Microservice" src="assets/rust-microservice.jpg"/>
 
-## About the Project
+  <h1></h1>
+  <h3>Rust Microservice is a powerful framework for building web services in Rust</h3>
 
-This microservice was developed in Rust with a strong focus on high performance, security, 
-and scalability.
-It exposes a RESTful API responsible for data querying, creation, update, and deletion operations,
-structured according to the MVC (Model–View–Controller) architectural pattern, promoting a 
-clear separation of responsibilities and facilitating code maintenance and evolution.
+  ![rust](https://badgen.net/badge/Rust%20Edition/2024/red?scale=1.0)
+  ![rust](https://badgen.net/badge/Rust/1.91.1/blue?scale=1.0)
+  ![crate](https://badgen.net/badge/crates.io/v0.1.0/orange?scale=1.0)
+  <!--[![build status](https://github.com/kenniston/rust-microservice/actions/workflows/rust.yml/badge.svg)](https://github.com/kenniston/rust-microservice/actions/workflows/rust.yml)-->
+  [![GitHub stars](https://img.shields.io/github/stars/kenniston/rust-microservice.svg?style=social&label=Star&maxAge=1)](https://github.com/kenniston/rust-microservice/)
+  <br>Support us with a ⭐ !
 
-The **Controller** layer of each module is responsible for receiving and handling HTTP requests,
-performing initial validations, and routing the flow to the appropriate components. The 
-**Model** layer—represented here by the objects in the **Service** module of each feature—is 
-responsible for business rules, while data access logic is represented by the objects in the 
-**Repository** module of each feature.
+</div>
 
-The microservice leverages modern libraries from the Rust ecosystem, such as actix-web 
-for HTTP route management, serde for data serialization and deserialization, and SeaORM 
-for database communication.
-The entire flow follows Rust’s recommended practices for concurrency and memory safety, 
-resulting in a robust, efficient service ready for production environments.
 
----
-## 🚀 Technologies Used
+# Microservice Framework <!-- omit from toc -->
 
-- **Rust**
-- **Kubernetes**
-- **TestContainers** (integration tests)
-- **Serde**, **Tokio**, **Actix**, SeaORM, and other crates
+A Rust crate whichs provides a framework for building microservices. It follows the MVC 
+(Model-View-Controller) architecture pattern and provides a strong focus on high performance, 
+security, and scalability.
 
----
-## 📦 API Features
+## 📋 Table of Contents <!-- omit from toc -->
 
-- Query users stored in the database;
-- Versioned endpoints;
-- Filters by name and document;
-- Structured logging;
-- Configuration via environment variables.
+- [� Overview](#-overview)
+- [✨ Features](#-features)
+- [🛠️ Installation](#️-installation)
+- [⚡ Quick Start](#-quick-start)
+- [💡 Usage Examples](#-usage-examples)
+- [🔧 Development Setup](#-development-setup)
+- [📦 Project Dependencies](#-project-dependencies)
+- [📄 License](#-license)
+- [🤝 Contributing](#-contributing)
+- [📝 Changelog](#-changelog)
 
----
-## ☸️ Kubernetes Deployment
 
-The server can runs on a Kubernetes cluster containing:
+## 📖 Overview
 
-- Deployment
-- ConfigMap
-- Secret
-- Service
-- Ingress
+The framework is designed to be modular, allowing developers to register their own route 
+handlers, serializers, and business logic. This enables a high degree of customization and 
+flexibility, making it suitable for a wide range of use cases.
 
----
-## 🧪 Tests
+## ✨ Features
 
-### ✔️ Unit Tests
-Run with:
+- Modular architecture with support for registering custom route handlers, serializers, 
+  and business logic
+- High performance HTTP server with support for asynchronous request handling
+- Strong focus on security and scalability
+- Support for JSON and XML serialization/deserialization
+- Built-in metrics export compatible with Prometheus;
+- YAML-based configuration via `config.yaml`;
+- Built-in API documentation with OpenAPI and interactive UI through Swagger UI powered 
+  by Utoipa Swagger UI;
+- Built-in Health Check endpoint;
+- Configurable server and actuator ports (defaults: `8080` and `7188`);
+- Native CORS configuration support;
+- MVC-based project architecture;
+- Automatic database connectivity (SQLite, PostgreSQL, MySQL, and Google BigQuery) driven 
+  by YAML configuration;
+- Local development and integration testing with Docker Compose and Testcontainers;
+- Integration test wrapper for initializing a global Testcontainers environment;
+- Built-in integration with OAuth2 servers (Keycloak on the server example);
+- Automatic discovery URL resolution for:
+  issuer, jwks, token, authorization, introspection, user-info, and end-session endpoints;
+- Endpoint-level security configuration using Rust macros.
+  
+## 🛠️ Installation
+
+Add the Rust Microservice to Cargo.toml:
+
+```toml
+
+[dependencies]
+rust-microservice = "0.1.0"
 
 ```
-cargo test
-```
 
-### ✔️ Integration Tests with TestContainers
+> The `Rust Microservice` framework relies on several core crates to bootstrap and run projects.  
+> As a result, the following dependencies are required in any application built with the framework:
+>
+> - `actix-web`
+> - `tokio`
+> - `utoipa`
+> - `sea-orm`
+> - `utoipa-swagger-ui`
 
-The tests start real containers to validate the API behavior in an isolated environment:
+## ⚡ Quick Start
+
+To configure the server, apply the ServerApi macro to the main function. The macro automatically
+discovers all actix-web handlers defined in the `controllers_path` attribute and initializes the 
+databases specified in the YAML configuration file.
+
+The configuration file can be provided to the framework using the `--config-file` command-line 
+parameter (or the `CONFIG_FILE` environment variable), or as a Base64-encoded file via the 
+`--b64-config-file` parameter (or the `B64_CONFIG_FILE` environment variable).
+
+The ServerApi macro attributes also allow customization of the OpenAPI metadata and the 
+server banner.
 
 ```rust
-use testcontainers::clients::Cli;
+pub mod module;
 
-#[test]
-fn integration_test() {
-    let docker = Cli::default();
-    let container = docker.run(MyContainer::default());
-}
-```
+use rust_microservice::ServerApi;
 
----
-## 🛠️ How to Run Locally
-
->IMPORTANT: Proceed with the steps described in [Development Environment](#development-environment)
-> to fully prepare the development environment for this project.
-
-```
-cargo run -- --config-file="./assets/your-custom-config.yaml" run
-```
-
----
-## 📁 Project Structure
+#[ServerApi(
+    controllers_path = "src/module, src/controllers",
+    openapi_title = "🌐 Rest API Server",
+    openapi_api_description = "Rest API OpenApi Documentation built with Rust 🦀.",
+    database = "true",
+    banner = r#"
+            _~^~^~_         ___    ___   ____    ____
+        \) /  o o  \ (/    / _ |  / _ \ /  _/   / __/___  ____ _  __ ___  ____
+          '_   -   _'     / __ | / ___/_/ /    _\ \ / -_)/ __/| |/ // -_)/ __/
+          / '-----' \    /_/ |_|/_/   /___/   /___/ \__//_/   |___/ \__//_/
+    "#
+)]
+fn main() -> rust_microservice::Result<(), String> {}
 
 ```
-root
-├── assets/                                 # Static files, mock data, and test resources
-│     └── tests/                            # Assets specifically used for integration or unit tests
-│
-├── src/                                    # Main Rust source code
-│    ├── dto/                               # Data Transfer Objects for API input/output
-│    ├── entity/                            # Project Database Entity
-│    ├── module/                            # Application feature modules
-│    │     ├── user/                        # "User" domain module
-│    │     │    ├── user_controller.rs      # HTTP handlers and route definitions
-│    │     │    ├── user_repository.rs      # Data access layer (BigQuery)
-│    │     └──  └── user_service.rs         # Business logic and service layer
-│    │
-│    └── main.rs                            # Application entry point
-│
-└── tests/                                  # Integration tests executed with cargo test
+
+## 💡 Usage Examples
+
+
+## 🔧 Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/kenniston/rust-microservice
+cd rust-microservice
+
+# Build the server example
+cargo build -p server
+
+# Run the server example
+cargo run -p server
+
+# Format code
+cargo fmt
+
+# Check for issues
+cargo clippy
 ```
 
----
-## Accessing the Project
+## 📦 Project Dependencies
 
-To access the project, open the following address in your browser:
-[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+This section describes the common dependencies used by projects built with the Rust 
+Microservice Framework. These libraries provide the foundation for web handling, 
+serialization, asynchronous execution, database access, observability, and API 
+documentation.
 
----
-## 🛠️ Development Environment
+The dependencies listed below represent a typical setup and may be adjusted according 
+to project requirements.
 
-Proceed with the steps bellow to fully prepare the development enviroment:
+- `rust-microservice` – Core framework providing the microservice structure and shared components.
+- `rust-embed` – Embeds static assets directly into the binary.
+- `actix-web` – High-performance asynchronous web framework.
+- `serde` – Serialization and deserialization framework.
+- `serde_json` – JSON support for Serde.
+- `tokio` – Asynchronous runtime for non-blocking operations.
+- `sea-orm` – Async and dynamic ORM for database access.
+- `utoipa` – OpenAPI specification generation.
+- `utoipa-swagger-ui` *(actix-web feature)* – Embedded Swagger UI for API exploration.
+- `google-cloud-bigquery` – Client library for Google BigQuery integration.
+- `base64` – Base64 encoding and decoding utilities.
+- `tracing` – Structured, event-based logging and diagnostics.
+- `thiserror` – Ergonomic error definitions.
+- `derive_more` – Additional derive macros to reduce boilerplate.
+- `colored` – Colored terminal output.
+- `env_logger` – Environment-based logger implementation.
+- `log` *(serde feature)* – Logging facade with serialization support.
+- `reqwest` – HTTP client for outbound requests.
+- `reqwest-tracing` *(optional)* – Tracing instrumentation for HTTP client requests.
+- `reqwest-middleware` *(optional)* – Middleware support for Reqwest clients.
 
-### 1. Starts the CI/CD containers
 
-&emsp;&emsp; 1.1 - Execute the steps described in [`GitLab Environment`](etc/gitlab/README.md)
+## 📄 License
+  
+Licensed under either of
 
-&emsp;&emsp; 1.2 - Starts the CI/CD Containers defined in 
-                   [/etc/docker-compose-gitlab.yaml`](/etc/docker-compose-gitlab.yaml)
+- Apache License, Version 2.0 (LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
+- MIT license (LICENSE-MIT or http://opensource.org/licenses/MIT)
 
-### 2. Starts the Application and Monitoring containers
+at your option.
 
-&emsp;&emsp; 2.1 - Execute the steps described in [`Application Environment`](etc/README.md)
 
-&emsp;&emsp; 2.2 - Starts the Application Containers defined in
-                   [/etc/docker-compose.yaml`](/etc/docker-compose.yaml)
+## 🤝 Contributing
 
-### 3. Starts the local Kubernetes Cluster (K3D)
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.
 
-&emsp;&emsp; Execute the steps described in [`K3D Environment`](etc/k3d/README.md)
+Contributions are welcome! Join us — let’s build the future of Rust together.
 
+Here's how to get started:
+
+1. **🍴 Fork** the repository
+2. **🔧 Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **💾 Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **📤 Push** to the branch (`git push origin feature/amazing-feature`)
+5. **🔀 Open** a Pull Request
+
+
+## 📝 Changelog
+  
+  👉 See [CHANGELOG.md](CHANGELOG.md) for version history and updates.

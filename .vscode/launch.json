@@ -14,7 +14,7 @@
             "program": "${workspaceFolder}/target/debug/server",
             "stopAtEntry": false,
             "args": [
-                "--config-file=assets/custom-config.yaml",
+                "--config-file=examples/server/assets/custom-config.yaml",
                 "run"
             ],
             "cwd": "${workspaceFolder}",
@@ -44,7 +44,7 @@
             "name": "GDB Integration Test 'server'",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/target/debug/deps/mod-718a1a79dc07610f",
+            "program": "${workspaceFolder}/target/debug/deps/mod-56bc9f4b320afa8b",
             "stopAtEntry": false,
             "args": [],
             "cwd": "${workspaceFolder}",
@@ -71,77 +71,9 @@
                 },
                 {
                     "name": "RUST_LOG",
-                    "value": "debug,actix_web=error,actix_web_prom=error,testcontainers=info,reqwest=info,hyper_util=info,bollard=info,rustls=info,microservice::data::database=info,seaorm=info,sqlx::pool=debug,sea_orm::driver::sqlx_postgres=info"
+                    "value": "debug,actix_web=error,actix_web_prom=error,testcontainers=info,reqwest=info,hyper_util=info,bollard=info,rustls=info,rust_microservice::data::database=info,seaorm=info,sqlx::pool=debug,sea_orm::driver::sqlx_postgres=info"
                 }
             ]
         },
-        ////////////////////////
-        // LLDB DEBUG SECTION - IMPORTANT: DIFICULT TO DEBUG LARGE BINARIES. USE GDB INSTEAD.
-        ////////////////////////
-        {
-            "name": "Debug unit tests in library 'microservice'",
-            "type": "lldb",
-            "request": "launch",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--package=server-framework"
-                ]
-            }
-        },
-        {
-            "name": "Debug executable 'server'",
-            "type": "lldb",
-            "request": "launch",
-            "cargo": {
-                "args": [
-                    "run",
-                    "--bin=server",
-                    "--package=api-server"
-                ]
-            },
-            "args": [
-                "--config-file=assets/poc-custom-config.yaml",
-                "run"
-            ],
-            "cwd": "${workspaceFolder}",
-            "env": {
-                "RUST_BACKTRACE": "1",
-                "RUST_LOG": "info,actix_web=error,actix_web_prom=error",
-                "LLDB_USE_NATIVE_PDB_READER": "1"
-            }
-        },
-        {
-            "name": "Debug tests in executable 'server'",
-            "type": "lldb",
-            "request": "launch",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--bin=server",
-                    "--package=api-server"
-                ]
-            },
-            "env": {
-                "RUST_BACKTRACE": "1",
-                "RUST_LOG": "info,actix_web=error,actix_web_prom=error"
-            }
-        },
-        {
-            "name": "Debug Integration Test 'server'",
-            "type": "lldb",
-            "request": "launch",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--test",
-                    "mod"
-                ]
-            },
-            "env": {
-                "RUST_BACKTRACE": "0",
-                "RUST_LOG": "info,actix_web=error,actix_web_prom=error"
-            }
-        }
     ]
 }

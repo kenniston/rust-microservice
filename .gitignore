@@ -5,10 +5,4 @@
 /target
 .binaries/
 
-### Prof of Concept Files ####
-**/poc_*/
-**/poc_*/**
-/assets/poc-custom-config.yaml
 
-### Sonar Files ####
-.scannerwork/

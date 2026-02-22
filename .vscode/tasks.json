@@ -4,6 +4,10 @@
 		{
 			"type": "cargo",
 			"command": "build",
+			"args": [
+				"-p",
+				"server",
+			],
 			"problemMatcher": [
 				"$rustc"
 			],
@@ -17,6 +21,8 @@
 			"type": "cargo",
 			"command": "test",
 			"args": [
+				"-p",
+				"server",
 				"--test",
 				"mod",
 				"--no-run",
