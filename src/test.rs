@@ -387,7 +387,7 @@ pub mod containers {
     ///
     /// * `realm_data_path`: Optional. The path to the realm data JSON file to be imported.
     /// * `network`: Optional. The network to use for the container. If `None`, the default
-    /// *                      network is used.
+    /// * network is used.
     ///
     /// # Returns
     ///

@@ -77,13 +77,19 @@ pub async fn create_user_endpoint(user: web::Json<UserDTO>) -> HttpResponse {
 /// - `200 OK`: The user was retrieved successfully.
 /// - `400 Bad Request`: An error occurred while attempting to retrieve the user.
 #[utoipa::path(
+    get,
+    path = "/v1/user/{id}",
     tag = "Retrieve a user by ID",
     responses(
         (status = 200, description= "The data structure representing the retrieved user.", body = UserDTO),
         (status = 400, description= "The data structure representing an error message.", body = ResponseDTO)
     )
 )]
-#[get("/v1/user/{id}")]
+#[secured(
+    method = "get",
+    path = "/v1/user/{id}",
+    authorize = "hasAnyRole(ROLE_ADMIN, ROLE_USER)"
+)]
 pub async fn get_user_endpoint(path: web::Path<i32>) -> HttpResponse {
     let id = path.into_inner();
 

@@ -419,8 +419,39 @@ fn configure_cors(settings: &Settings) -> Cors {
     }
 }
 
-/// Struct representing the server wrappers used in the HTTP server.
-/// It includes Prometheus metrics and CORS configuration.
+/// Represents the middleware wrappers applied to the HTTP server.
+///
+/// This structure groups cross-cutting concerns that are attached to the
+/// request/response pipeline, such as metrics collection and CORS handling.
+///
+/// # Fields
+///
+/// - `metrics_enabled`:
+///   Indicates whether Prometheus metrics are exposed and collected.
+///
+/// - `prometheus`:
+///   Configuration and instance responsible for exporting Prometheus metrics.
+///
+/// - `cors`:
+///   Cross-Origin Resource Sharing (CORS) configuration applied to incoming requests.
+///
+/// # Usage
+///
+/// This struct is typically initialized during server bootstrap and injected
+/// into the HTTP server builder to register middleware components.
+///
+/// The `rust_microservice::create_server_wrappers` function can be used to create an instance of
+/// this struct.
+///
+/// # Example
+///
+/// ```rust
+/// let wrappers = ServerWrappers {
+///     metrics_enabled: true,
+///     prometheus: prometheus_metrics,
+///     cors: cors_config,
+/// };
+/// ```
 pub struct ServerWrappers {
     pub metrics_enabled: bool,
     pub prometheus: PrometheusMetrics,

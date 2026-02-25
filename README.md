@@ -15,7 +15,7 @@
 </div>
 
 
-# Microservice Framework <!-- omit from toc -->
+# 📦 Rust Microservice Framework <!-- omit from toc -->
 
 A Rust crate whichs provides a framework for building microservices. It follows the MVC 
 (Model-View-Controller) architecture pattern and provides a strong focus on high performance, 
@@ -23,11 +23,35 @@ security, and scalability.
 
 ## 📋 Table of Contents <!-- omit from toc -->
 
-- [� Overview](#-overview)
+- [📖 Overview](#-overview)
 - [✨ Features](#-features)
 - [🛠️ Installation](#️-installation)
 - [⚡ Quick Start](#-quick-start)
 - [💡 Usage Examples](#-usage-examples)
+  - [🖥️ Simple Server](#️-simple-server)
+  - [🔗 ServerApi Macro](#-serverapi-macro)
+  - [🛢️ Database Macro](#️-database-macro)
+  - [🔐 Secured Macro](#-secured-macro)
+  - [Attribute Reference](#attribute-reference)
+    - [**`method`**](#method)
+    - [**`path`**](#path)
+    - [**`authorize`**](#authorize)
+  - [Examples](#examples)
+    - [**`Single role`**:](#single-role)
+    - [**`Any role`**:](#any-role)
+    - [**`All roles`**:](#all-roles)
+- [YAML-based server configuration file](#yaml-based-server-configuration-file)
+  - [Server](#server)
+  - [CORS](#cors)
+  - [Security — OAuth2 / OpenID Connect](#security--oauth2--openid-connect)
+  - [OAuth2 Client](#oauth2-client)
+  - [JWKS](#jwks)
+  - [Data Sources](#data-sources)
+  - [*Redis*](#redis)
+  - [*Relational Databases*](#relational-databases)
+  - [*BigQuery Database Connection*](#bigquery-database-connection)
+  - [Metrics](#metrics)
+  - [Runtime Notes](#runtime-notes)
 - [🔧 Development Setup](#-development-setup)
 - [📦 Project Dependencies](#-project-dependencies)
 - [📄 License](#-license)
@@ -44,10 +68,10 @@ flexibility, making it suitable for a wide range of use cases.
 ## ✨ Features
 
 - Modular architecture with support for registering custom route handlers, serializers, 
-  and business logic
-- High performance HTTP server with support for asynchronous request handling
-- Strong focus on security and scalability
-- Support for JSON and XML serialization/deserialization
+  and business logic;
+- High performance HTTP server with support for asynchronous request handling;
+- Strong focus on security and scalability;
+- Support for JSON and XML serialization/deserialization;
 - Built-in metrics export compatible with Prometheus;
 - YAML-based configuration via `config.yaml`;
 - Built-in API documentation with OpenAPI and interactive UI through Swagger UI powered 
@@ -88,19 +112,66 @@ rust-microservice = "0.1.0"
 ## ⚡ Quick Start
 
 To configure the server, apply the ServerApi macro to the main function. The macro automatically
-discovers all actix-web handlers defined in the `controllers_path` attribute and initializes the 
-databases specified in the YAML configuration file.
+discovers all actix-web handlers defined in the `controllers_path` ([ServerApi Attributes](#serverapi-macro)) 
+attribute and initializes the databases specified in the YAML configuration file.
 
 The configuration file can be provided to the framework using the `--config-file` command-line 
 parameter (or the `CONFIG_FILE` environment variable), or as a Base64-encoded file via the 
 `--b64-config-file` parameter (or the `B64_CONFIG_FILE` environment variable).
 
-The ServerApi macro attributes also allow customization of the OpenAPI metadata and the 
-server banner.
+```rust
+use rust_microservice::ServerApi;
+
+#[ServerApi]
+fn main() -> rust_microservice::Result<(), String> {}
+
+```
+
+## 💡 Usage Examples
+
+### 🖥️ Simple Server
+
+The Rust Microservice framework has a default config wich starts a simple server on port `8080`.
+This server also enable a health check and monitoring feature. The health check can be reach
+on default port `7188` and `/health` endpoint.
+
+Default server configuration:
+
+```yaml
+server:
+  host: "0.0.0.0"
+  port: 8080
+  health-check-port: 7188
+```
+---
+
+### 🔗 ServerApi Macro
+
+The `ServerApi` macro is a procedural macro that generates the code necessary to
+start an `actix-web` HTTP server with support for OpenAPI documentation and
+a health check endpoint.
+
+The `ServerApi` macro takes the following attributes:
+
+- `controllers_path`: A comma-separated list of paths to modules containing
+  controllers. The macro will recursively traverse the directories and generate
+  code to register the controllers with the HTTP server.
+
+- `openapi_title`: A string used as the title of the OpenAPI documentation.
+
+- `openapi_api_description`: A string used as the description of the OpenAPI
+  documentation.
+
+- `database`: A boolean indicating whether the microservice should enable database
+  integration. If set to `true`, the macro will generate code to initialize the
+  database connection pool using the `sea_orm` crate.
+
+- `banner`: A string used as the banner of the microservice. The banner is displayed
+  in the server logs during startup.
+
+Example of a minimal server bootstrap using this crate:
 
 ```rust
-pub mod module;
-
 use rust_microservice::ServerApi;
 
 #[ServerApi(
@@ -111,16 +182,313 @@ use rust_microservice::ServerApi;
     banner = r#"
             _~^~^~_         ___    ___   ____    ____
         \) /  o o  \ (/    / _ |  / _ \ /  _/   / __/___  ____ _  __ ___  ____
-          '_   -   _'     / __ | / ___/_/ /    _\ \ / -_)/ __/| |/ // -_)/ __/
-          / '-----' \    /_/ |_|/_/   /___/   /___/ \__//_/   |___/ \__//_/
+          '_   -   _'     / __ | / ___/_/ /    _\ \ / -_)/ __/| |/ //! -_)/ __/
+          / '-----' \    /_/ |_|/_/   /___/   /___/ \__//!_/   |___/ \__//!_/
     "#
 )]
-fn main() -> rust_microservice::Result<(), String> {}
+async fn start_server() -> rust_microservice::Result<(), String> {}
+```
+---
 
+### 🛢️ Database Macro
+
+The `database` macro is a procedural macro that injects a database connection
+into repository methods.
+
+It expects two mandatory attributes:
+- `name`: selects which configured database connection will be used.
+- `error`: defines the error variant returned when the database is not configured or
+  database connection cannot be found.
+
+The macro injects a variable named `db` with type `&DatabaseConnection` (seaorm),
+so the function body can execute queries directly.
+
+Example:
+
+```rust
+use rust_microservice::{Server, database};
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum UserError {
+    #[error("Database is not configured")]
+    DatabaseNotConfigured,
+
+    #[error("User not found")]
+    NotFound,
+}
+
+pub type Result<T, E = UserError> = std::result::Result<T, E>;
+
+#[database(name = "api", error = "UserError::DatabaseNotConfigured")]
+pub async fn get_user_by_id(user_id: i32) -> Result<()> {
+    user::Entity::find_by_id(user_id)
+       .one(&db)
+       .await
+       .map_err(|_| UserError::NotFound)?
+       .ok_or(UserError::NotFound)
+       .map(Into::into)
+}
+```
+---
+
+### 🔐 Secured Macro
+
+The `Secured` macro protects `actix-web` endpoints by attaching an authentication middleware.
+
+When applied to an endpoint, it validates:
+
+- JWT presence in the request.
+- JWT signature.
+- JWT expiration time (`exp` claim).
+- JWT issuer (`iss` claim).
+- Required roles from the `authorize` expression.
+
+### Attribute Reference
+
+Macro usage format:
+
+```rust
+#[secured(method = "...", path = "...", authorize = "...")]
 ```
 
-## 💡 Usage Examples
+#### **`method`**
 
+Defines the HTTP method used to map the endpoint in Actix-Web.
+
+Supported values: 
+
+- `get`
+- `post`
+- `put`
+- `delete`
+- `head`
+- `connect`
+- `options`
+- `trace`
+- `patch`
+
+#### **`path`**
+
+Defines the endpoint path to be registered by Actix-Web.
+
+Example:
+
+```rust
+path = "/v1/user/{id}"
+```
+
+#### **`authorize`**
+
+Defines the required role rule that must be satisfied by roles present in the JWT.
+
+Supported formats:
+
+1. `Single role`: validates one role in the token.
+
+```rust
+authorize = "ROLE_ADMIN"
+```
+
+2. `hasAnyRole`: validates that at least one role in the list exists in the token.
+
+```rust
+authorize = "hasAnyRole(ROLE_ADMIN, ROLE_USER)"
+```
+
+3. `hasAllRoles`: validates that all roles in the list exist in the token.
+
+```rust
+authorize = "hasAllRoles(ROLE_ADMIN, ROLE_USER)"
+```
+
+### Examples
+
+#### **`Single role`**:
+
+```rust
+#[secured(method = "post", path = "/v1/user", authorize = "ROLE_ADMIN")]
+pub async fn create_user_endpoint(...) -> HttpResponse {
+    // handler body
+}
+```
+
+#### **`Any role`**:
+
+```rust
+#[secured(
+    method = "get",
+    path = "/v1/user/{id}",
+    authorize = "hasAnyRole(ROLE_ADMIN, ROLE_USER)"
+)]
+pub async fn get_user_endpoint(...) -> HttpResponse {
+    // handler body
+}
+```
+
+#### **`All roles`**:
+
+```rust
+#[secured(
+    method = "delete",
+    path = "/v1/user/{id}",
+    authorize = "hasAllRoles(ROLE_ADMIN, ROLE_AUDITOR)"
+)]
+pub async fn delete_user_endpoint(...) -> HttpResponse {
+    // handler body
+}
+```
+
+
+## YAML-based server configuration file
+The server behavior is fully driven by a YAML configuration file. This file defines network 
+settings, security providers, data sources, and observability integrations used at runtime.
+
+The configuration is loaded during application startup and applied automatically by the framework.
+
+### Server
+
+Defines how the HTTP service is exposed and how it interacts with the runtime environment.
+
+| Field                 | Description                                                               |
+| --------------------- | ------------------------------------------------------------------------- |
+| `host`                | Network interface where the server binds.                                 |
+| `port`                | Main HTTP port used by the API.                                           |
+| `health-check-port`   | Dedicated port exposing the health endpoint.                              |
+| `use-docker-compose`  | Enables orchestration of dependencies via Docker Compose.                 |
+| `docker-compose-file` | Path to the Docker Compose definition used when orchestration is enabled. |
+
+### CORS
+
+Controls cross-origin access policies.
+
+| Field                     | Description                                                        |
+| ------------------------- | ------------------------------------------------------------------ |
+| `max-age`                 | Duration (seconds) browsers cache preflight responses.             |
+| `allow-credentials`       | Allows cookies and authorization headers in cross-origin requests. |
+| `allowed-methods`         | HTTP methods allowed for cross-origin calls.                       |
+| `allowed-headers`         | Headers accepted from clients.                                     |
+| `allowed-origins_pattern` | Comma-separated list of allowed origin patterns.                   |
+
+### Security — OAuth2 / OpenID Connect
+
+Enables authentication and token validation using an OAuth2 provider.
+
+| Field                     | Description                                                        |
+| ------------------------- | ------------------------------------------------------------------ |
+| `enabled`                 | Activates OAuth2 protection for secured endpoints.                 |
+| `load-from-discovery-url` | Automatically loads provider metadata from the discovery endpoint. |
+| `discovery-url`           | OpenID Provider discovery document.                                |
+| `issuer-uri`              | Expected token issuer identifier.                                  |
+| `jwks-uri`                | JSON Web Key Set endpoint used to validate tokens.                 |
+| `token-uri`               | Endpoint for obtaining access tokens.                              |
+| `authorization-uri`       | Authorization endpoint for login flows.                            |
+| `introspection-uri`       | Endpoint for validating opaque tokens.                             |
+| `user_info-uri`           | Endpoint returning authenticated user claims.                      |
+| `end_session-uri`         | Logout endpoint for session termination.                           |
+
+### OAuth2 Client
+
+Credentials used by the server when interacting with the identity provider.
+
+| Field    | Description                             |
+| -------- | --------------------------------------- |
+| `id`     | OAuth2 client identifier.               |
+| `secret` | OAuth2 client secret.                   |
+| `scope`  | Requested scopes during authentication. |
+
+
+### JWKS
+
+Defines local JSON Web Keys used for token signing or validation.
+
+Each key entry contains:
+
+- kid — Key identifier
+- kty — Key type
+- alg — Signing algorithm
+- use — Key usage
+- e — Public exponent
+- n — RSA modulus
+- x5c — X.509 certificate chain
+
+This section is typically used when keys are managed internally or cached locally.
+
+### Data Sources
+
+### *Redis*
+
+Configuration for distributed cache and key-value storage.
+
+| Field                  | Description                                     |
+| ---------------------- | ----------------------------------------------- |
+| `enabled`              | Enables Redis integration.                      |
+| `host` / `port`        | Connection settings.                            |
+| `client-type`          | Redis client implementation.                    |
+| `lettuce.pool`         | Connection pool configuration.                  |
+| `repositories.enabled` | Enables repository abstraction backed by Redis. |
+
+
+### *Relational Databases*
+
+Defines a list of database connections used by the application.
+
+Each database entry supports:
+
+- Connection pooling configuration
+- Timeouts and lifecycle settings
+- SQL logging control
+- Independent enable/disable toggle
+
+This allows multiple data sources (e.g., API DB, job processing DB) to coexist in the same runtime.
+
+| Field            | Description                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
+| `name`           | Logical name of the database connection used by the server.                                       |
+| `enabled`        | Enables or disables this database configuration. When `false`, the connection is not initialized. |
+| `url`            | Database connection string used to establish the connection.                                      |
+| `min-pool-size`  | Minimum number of connections maintained in the pool.                                             |
+| `max-pool-size`  | Maximum number of connections allowed in the pool.                                                |
+| `logging`        | Enables query and connection logging for this database.                                           |
+| `aquire-timeout` | Maximum time (in seconds) to wait when acquiring a connection from the pool.                      |
+| `max-lifetime`   | Maximum lifetime (in minutes) of                                                                  |
+
+> Important: The framework currently supports only SQLite, PostgreSQL, MySQL, MariaDB, and 
+> Microsoft SQL Server databases.
+
+### *BigQuery Database Connection*
+
+This section defines the configuration parameters required to establish a secure connection
+to Google BigQuery, the fully managed data warehouse provided by Google. These settings allow
+the server to authenticate, select the target project and dataset, and control execution
+behavior for queries. .
+
+| Field          | Description                                 |
+| -------------- | ------------------------------------------- |
+| `enabled`      | Enables BigQuery access.                    |
+| `print-tables` | Logs available tables during startup.       |
+| `region`       | Dataset region.                             |
+| `project`      | Google Cloud project identifier.            |
+| `credential`   | Base64-encoded service account credentials. |
+| `dataset`      | List of datasets used by the application.   |
+
+
+### Metrics
+
+Controls application observability and monitoring integration.
+
+| Field      | Description                             |
+| ---------- | --------------------------------------- |
+| `enabled`  | Enables metrics collection.             |
+| `app-name` | Identifier used when exporting metrics. |
+
+
+### Runtime Notes
+
+- Disabled components remain configured but inactive.
+- Secrets should be externalized in production environments.
+- Configuration values can be overridden via environment variables or CLI parameters.
+- The configuration is validated during server startup.
 
 ## 🔧 Development Setup
 

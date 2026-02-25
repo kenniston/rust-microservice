@@ -60,10 +60,6 @@ use crate::{dto::user::UserDTO, entity::user};
 pub async fn create_user(dto: UserDTO) -> Result<UserDTO> {
     let model = user::ActiveModel::from(dto);
 
-    db.ping()
-        .await
-        .expect("CONNECTION DROPPED!!!!!!!!!!!!!!!!!!!!");
-
     let saved = model.save(&db).await.map_err(|e| match e.sql_err() {
         Some(SqlErr::UniqueConstraintViolation(_)) => UserError::AlreadyExists,
         _ => UserError::Create(e.to_string()),
@@ -90,10 +86,6 @@ pub async fn create_user(dto: UserDTO) -> Result<UserDTO> {
 #[database(name = "api", error = "UserError::DatabaseNotConfigured")]
 pub async fn update_user(dto: UserDTO) -> Result<UserDTO> {
     let id = dto.id.ok_or(UserError::InvalidUserId)?;
-
-    db.ping()
-        .await
-        .expect("CONNECTION DROPPED!!!!!!!!!!!!!!!!!!!!");
 
     let model = user::Entity::find_by_id(id)
         .one(&db)
@@ -134,10 +126,6 @@ pub async fn update_user(dto: UserDTO) -> Result<UserDTO> {
 /// - `UserDeleteError`: An error occurred while attempting to delete the user.
 #[database(name = "api", error = "UserError::DatabaseNotConfigured")]
 pub async fn delete_user(user_id: i32) -> Result<u64> {
-    db.ping()
-        .await
-        .expect("CONNECTION DROPPED!!!!!!!!!!!!!!!!!!!!");
-
     let result = user::Entity::delete_by_id(user_id)
         .exec(&db)
         .await
@@ -163,10 +151,6 @@ pub async fn delete_user(user_id: i32) -> Result<u64> {
 /// A `Result` containing a vector of `UserDTO` objects, representing the users in the system.
 #[database(name = "api", error = "UserError::DatabaseNotConfigured")]
 pub async fn all_user(name: String) -> Result<Vec<UserDTO>> {
-    db.ping()
-        .await
-        .expect("CONNECTION DROPPED!!!!!!!!!!!!!!!!!!!!");
-
     let users = user::Entity::find()
         .filter(
             sea_orm::Condition::all().add(
@@ -199,10 +183,6 @@ pub async fn all_user(name: String) -> Result<Vec<UserDTO>> {
 /// A `Result` containing a `UserDTO` object, representing the retrieved user.
 #[database(name = "api", error = "UserError::DatabaseNotConfigured")]
 pub async fn get_user_by_id(user_id: i32) -> Result<UserDTO> {
-    db.ping()
-        .await
-        .expect("CONNECTION DROPPED!!!!!!!!!!!!!!!!!!!!");
-
     user::Entity::find_by_id(user_id)
         .one(&db)
         .await

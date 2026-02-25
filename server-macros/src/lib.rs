@@ -84,7 +84,7 @@
 
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use quote::{ToTokens, quote};
+use quote::{ToTokens, format_ident, quote};
 use std::{fs::File, io::Read, path::Path};
 use syn::{
     Attribute, Expr, Ident, ItemFn, Result, Token,
@@ -176,30 +176,29 @@ impl Parse for ArgList {
     }
 }
 
-/// Bootstraps the API server and registers all controllers using Actix-Web.
-///
-/// The `api_server` macro generates the microservice’s `main` function,
-/// configures the Actix-Web `HttpServer`, and maps each controller’s static
-/// handler methods into routes. It simplifies service initialization by
-/// automatically wiring controllers and server settings.
-///
-/// # Usage
-///
-/// Controllers must expose static Actix-Web–compatible handler methods.
-///
-/// ```rust
-/// #[api_server(
-///     controllers_path = "src/module/user, src/module/admin",
-///     bind = "0.0.0.0:8080"
-/// )]
-/// fn main() {
-///    //The macro will generate the server bootstrap code here.
-/// }
-/// ```
-///
-/// This macro generates the server startup code, registers all routes derived
-/// from the provided controllers, and binds the application to the configured
-/// address.
+// Bootstraps the API server and registers all controllers using Actix-Web.
+//
+// The `api_server` macro generates the microservice’s `main` function,
+// configures the Actix-Web `HttpServer`, and maps each controller’s static
+// handler methods into routes. It simplifies service initialization by
+// automatically wiring controllers and server settings.
+//
+// # Usage
+//
+// Controllers must expose static Actix-Web–compatible handler methods.
+//
+// ```rust
+// #[api_server(
+//     controllers_path = "src/module/user, src/module/admin",
+// )]
+// fn main() {
+//    //The macro will generate the server bootstrap code here.
+// }
+// ```
+//
+// This macro generates the server startup code, registers all routes derived
+// from the provided controllers, and binds the application to the configured
+// address.
 #[proc_macro_attribute]
 pub fn api_server(attrs: TokenStream, item: TokenStream) -> TokenStream {
     let main_fn = parse_macro_input!(item as ItemFn);
@@ -783,7 +782,7 @@ pub fn secured(attrs: TokenStream, item: TokenStream) -> TokenStream {
 fn impl_secured_fn(secured_fn: ItemFn, arg_list: ArgList) -> TokenStream {
     let fn_body = &secured_fn.block.stmts;
     let sig = &secured_fn.sig.to_token_stream();
-    let _fn_name = &secured_fn.sig.ident;
+    let fn_name = &secured_fn.sig.ident;
     let _fn_output = &secured_fn.sig.output;
     let _fn_params = &secured_fn.sig.inputs;
     let _fn_modifiers = &secured_fn.sig.asyncness;
@@ -796,15 +795,15 @@ fn impl_secured_fn(secured_fn: ItemFn, arg_list: ArgList) -> TokenStream {
     let path = get_arg_string_value(&arg_list, "path".to_string(), "".to_string()).to_lowercase();
     let authorize = get_arg_string_value(&arg_list, "authorize".to_string(), "".to_string());
     let _actix_web_attr = update_actix_web_attr(&secured_fn.attrs);
+    let auth_module_name = format_ident!("auth_{}", fn_name);
+    let wrap_fn = format!(
+        "::actix_web::middleware::from_fn({}::auth_middleware)",
+        auth_module_name
+    )
+    .to_string();
 
     quote! {
-            //#actix_web_attr
-            #[#method(#path, wrap = "::actix_web::middleware::from_fn(auth::auth_middleware)")]
-            #fn_visibility #sig {
-                #( #fn_body )*
-            }
-
-        mod auth {
+        mod #auth_module_name {
             use ::actix_web::{
                 HttpMessage,
                 http::header::{self, HeaderValue}
@@ -823,11 +822,16 @@ fn impl_secured_fn(secured_fn: ItemFn, arg_list: ArgList) -> TokenStream {
                     .map_err(|e| ::actix_web::error::ErrorInternalServerError(e.to_string()))?
                     .validate_jwt(&req, #authorize.to_string())
                     .map_err(|e| {
-                        warn!("Unauthorized: {}", e);
+                        //warn!("Unauthorized: {}", e);
                         ::actix_web::error::ErrorUnauthorized("Unauthorized user.")
                     })?;
                 next.call(req).await
             }
+        }
+
+        #[#method(#path, wrap = #wrap_fn)]
+        #fn_visibility #sig {
+            #( #fn_body )*
         }
     }
     .into()

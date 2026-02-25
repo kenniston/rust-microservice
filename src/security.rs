@@ -13,6 +13,46 @@ pub mod oauth2 {
     /// A type alias for a `Result` with the `ServerError` error type.
     pub type Result<T, E = OAuth2Error> = std::result::Result<T, E>;
 
+    /// Represents an authentication token response typically returned by an
+    /// OAuth2 / OpenID Connect authorization server.
+    ///
+    /// This structure contains access credentials and metadata required to
+    /// authenticate requests and manage token lifecycle, including expiration
+    /// and refresh information.
+    ///
+    /// All fields are optional to support partial responses from different
+    /// identity providers.
+    ///
+    /// # Fields
+    ///
+    /// * `access_token` — The token used to authenticate API requests.
+    /// * `expires_in` — Lifetime of the access token in seconds.
+    /// * `refresh_expires_in` — Lifetime of the refresh token in seconds.
+    /// * `refresh_token` — Token used to obtain a new access token when the current one expires.
+    /// * `token_type` — Type of the token (commonly `"Bearer"`).
+    /// * `id_token` — OpenID Connect ID token containing user identity claims.
+    /// * `session_state` — Identifier for the authenticated session.
+    /// * `scope` — Space-separated list of granted permissions.
+    ///
+    /// # Serialization
+    ///
+    /// This struct supports serialization and deserialization via `serde`,
+    /// making it suitable for use with JSON-based authentication responses.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let token = Token {
+    ///     access_token: Some("abc123".to_string()),
+    ///     expires_in: Some(3600),
+    ///     refresh_expires_in: Some(7200),
+    ///     refresh_token: Some("refresh_abc123".to_string()),
+    ///     token_type: Some("Bearer".to_string()),
+    ///     id_token: None,
+    ///     session_state: None,
+    ///     scope: Some("openid profile email".to_string()),
+    /// };
+    /// ```
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Token {
         pub access_token: Option<String>,
@@ -25,6 +65,60 @@ pub mod oauth2 {
         pub scope: Option<String>,
     }
 
+    /// Represents the payload used for authentication requests following
+    /// the OAuth2-style "password" or "client credentials" grant patterns.
+    ///
+    /// This structure is typically deserialized from an HTTP request body
+    /// with `application/x-www-form-urlencoded` or JSON content, depending
+    /// on the server configuration.
+    ///
+    /// Field names are serialized/deserialized using **kebab-case**
+    /// to match common OAuth2 conventions.
+    ///
+    /// # Fields
+    ///
+    /// - `grant_type`
+    ///   The authorization grant type that defines how the access token
+    ///   should be issued (e.g., `"password"`, `"client-credentials"`).
+    ///
+    /// - `username`
+    ///   The resource owner’s username. Required when using the `"password"`
+    ///   grant type.
+    ///
+    /// - `password`
+    ///   The resource owner’s password. Required when using the `"password"`
+    ///   grant type.
+    ///
+    /// - `client_id`
+    ///   The client application identifier issued during client registration.
+    ///   Required for client authentication.
+    ///
+    /// - `client_secret`
+    ///   The client application secret. Required for confidential clients
+    ///   when authenticating with the authorization server.
+    ///
+    /// - `scope`
+    ///   A space-delimited list of requested permission scopes that define
+    ///   the level of access being requested.
+    ///
+    /// # Serialization
+    ///
+    /// This struct derives `Serialize` and `Deserialize` and uses
+    /// `#[serde(rename_all = "kebab-case")]`, meaning a field like
+    /// `client_id` becomes `client-id` in the serialized representation.
+    ///
+    /// # Example JSON
+    ///
+    /// ```json
+    /// {
+    ///   "grant-type": "password",
+    ///   "username": "user@example.com",
+    ///   "password": "secret",
+    ///   "client-id": "my-client",
+    ///   "client-secret": "super-secret",
+    ///   "scope": "read write"
+    /// }
+    /// ```
     #[derive(Debug, Serialize, Deserialize)]
     #[serde(rename_all = "kebab-case")]
     pub struct LoginForm {
@@ -436,5 +530,22 @@ pub mod oauth2 {
         }
 
         Ok((method, roles))
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::get_authorize_role_method;
+
+        #[test]
+        fn should_parse_method_and_roles_from_authorize_string() {
+            let authorize = "hasAnyRole(ROLE_ADMIN, ROLE_USER)".to_string();
+
+            let result = get_authorize_role_method(authorize);
+
+            assert!(result.is_ok());
+            let (method, roles) = result.unwrap_or_default();
+            assert_eq!(method, "hasanyrole");
+            assert_eq!(roles, vec!["ROLE_ADMIN", "ROLE_USER"]);
+        }
     }
 }

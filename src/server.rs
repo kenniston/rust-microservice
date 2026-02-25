@@ -91,6 +91,8 @@ impl Server {
     /// # Examples
     ///
     /// ```rust
+    /// use rust_microservice::Server;
+    ///
     /// let server = Server::global();
     /// ```
     pub fn global() -> Result<&'static (dyn GlobalServer + Send + Sync)> {
@@ -108,6 +110,8 @@ impl Server {
     /// # Examples
     ///
     /// ```rust
+    /// use rust_microservice::Server;
+    ///
     /// let server = Server::global_server();
     /// ```
     pub fn global_server() -> Option<&'static Server> {
@@ -125,7 +129,9 @@ impl Server {
     /// # Examples
     ///
     /// ```rust
-    /// let server = Server::new();
+    /// use rust_microservice::Server;
+    ///
+    /// let server = Server::new("0.1.0".to_string(), None);
     /// Server::set_global(server);
     /// ```
     pub fn set_global(server: Server) {
@@ -518,12 +524,20 @@ impl Server {
     ///
     /// # Example
     ///
-    /// ```no_run
-    /// let server = Server::new()
-    ///     .init()
-    ///     .await
-    ///     .intialize_database()
-    ///     .await;
+    /// ```rust
+    /// use rust_microservice::Server;
+    ///
+    /// async fn start_server() -> rust_microservice::Result<(), String> {
+    ///     let server = Server::new("0.1.0".to_string(), None)
+    ///         .init()
+    ///         .await
+    ///         .map_err(|e|e.to_string())?
+    ///         .intialize_database()
+    ///         .await
+    ///         .map_err(|e|e.to_string())?;
+    ///
+    ///     Ok(())
+    /// }
     /// ```
     pub async fn intialize_database(mut self) -> Result<Self> {
         Server::check_initialized();
@@ -703,7 +717,7 @@ impl GlobalServer for Server {
     /// # Returns
     /// - `Ok(())` if the JWT token is valid and the roles match.
     /// - `Err(securityity::oauth2::OAuth2Error)` if the JWT token is invalid or the roles do
-    ///    not match.
+    ///   not match.
     fn validate_jwt(
         &self,
         request: &ServiceRequest,
@@ -734,6 +748,35 @@ impl GlobalServer for Server {
 /// A type alias for a `Result` with the `ServerError` error type.
 pub type Result<T, E = ServerError> = std::result::Result<T, E>;
 
+/// Represents all possible errors that can occur within the server lifecycle.
+///
+/// `ServerError` centralizes failures related to server state management,
+/// configuration validation, runtime availability, and database interaction.
+/// It is designed to provide clear, descriptive messages for logging and
+/// error propagation across the framework.
+///
+/// # Variants
+///
+/// - `InvalidState` — The server is in an unexpected or inconsistent state.
+/// - `Configuration` — The provided server configuration is invalid or incomplete.
+/// - `RuntimeNotFound` — The Tokio runtime could not be located or accessed.
+/// - `Database` — A database-related error occurred during server operation.
+/// - `NotInitialized` — An operation was attempted before the server was initialized.
+/// - `AlreadyInitialized` — Initialization was attempted more than once.
+///
+/// # Usage
+///
+/// This error type is typically used as the unified error for server setup,
+/// startup, and runtime operations.
+///
+/// # Example
+///
+/// ```rust
+/// fn start_server() -> Result<(), ServerError> {
+///     // Example failure
+///     Err(ServerError::NotInitialized)
+/// }
+/// ```
 #[derive(Debug, Error)]
 pub enum ServerError {
     #[error("Invalid server state: {0}")]
