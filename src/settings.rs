@@ -1,7 +1,152 @@
-//! The `Settings` module loads application configuration using the
-//! `config` crate, supporting YAML, TOML, and JSON files. It provides
-//! a strongly typed structure for accessing configuration values
-//! throughout the application.
+//! The server behavior is fully driven by a YAML configuration file. This file defines network
+//! settings, security providers, data sources, and observability integrations used at runtime.
+//!
+//! The configuration is loaded during application startup and applied automatically by the framework.
+//!
+//! ## Server
+//!
+//! Defines how the HTTP service is exposed and how it interacts with the runtime environment.
+//!
+//! | Field                 | Description                                                               |
+//! | --------------------- | ------------------------------------------------------------------------- |
+//! | `host`                | Network interface where the server binds.                                 |
+//! | `port`                | Main HTTP port used by the API.                                           |
+//! | `health-check-port`   | Dedicated port exposing the health endpoint.                              |
+//! | `use-docker-compose`  | Enables orchestration of dependencies via Docker Compose.                 |
+//! | `docker-compose-file` | Path to the Docker Compose definition used when orchestration is enabled. |
+//!
+//! ## CORS
+//!
+//! Controls cross-origin access policies.
+//!
+//! | Field                     | Description                                                        |
+//! | ------------------------- | ------------------------------------------------------------------ |
+//! | `max-age`                 | Duration (seconds) browsers cache preflight responses.             |
+//! | `allow-credentials`       | Allows cookies and authorization headers in cross-origin requests. |
+//! | `allowed-methods`         | HTTP methods allowed for cross-origin calls.                       |
+//! | `allowed-headers`         | Headers accepted from clients.                                     |
+//! | `allowed-origins_pattern` | Comma-separated list of allowed origin patterns.                   |
+//!
+//! ## Security — OAuth2 / OpenID Connect
+//!
+//! Enables authentication and token validation using an OAuth2 provider.
+//!
+//! | Field                     | Description                                                        |
+//! | ------------------------- | ------------------------------------------------------------------ |
+//! | `enabled`                 | Activates OAuth2 protection for secured endpoints.                 |
+//! | `load-from-discovery-url` | Automatically loads provider metadata from the discovery endpoint. |
+//! | `discovery-url`           | OpenID Provider discovery document.                                |
+//! | `issuer-uri`              | Expected token issuer identifier.                                  |
+//! | `jwks-uri`                | JSON Web Key Set endpoint used to validate tokens.                 |
+//! | `token-uri`               | Endpoint for obtaining access tokens.                              |
+//! | `authorization-uri`       | Authorization endpoint for login flows.                            |
+//! | `introspection-uri`       | Endpoint for validating opaque tokens.                             |
+//! | `user_info-uri`           | Endpoint returning authenticated user claims.                      |
+//! | `end_session-uri`         | Logout endpoint for session termination.                           |
+//!
+//! ## OAuth2 Client
+//!
+//! Credentials used by the server when interacting with the identity provider.
+//!
+//! | Field    | Description                             |
+//! | -------- | --------------------------------------- |
+//! | `id`     | OAuth2 client identifier.               |
+//! | `secret` | OAuth2 client secret.                   |
+//! | `scope`  | Requested scopes during authentication. |
+//!
+//!
+//! ## JWKS
+//!
+//! Defines local JSON Web Keys used for token signing or validation.
+//!
+//! Each key entry contains:
+//!
+//! - kid — Key identifier
+//! - kty — Key type
+//! - alg — Signing algorithm
+//! - use — Key usage
+//! - e — Public exponent
+//! - n — RSA modulus
+//! - x5c — X.509 certificate chain
+//!
+//! This section is typically used when keys are managed internally or cached locally.
+//!
+//! ## Data Sources
+//!
+//! ### *Redis*
+//!
+//! Configuration for distributed cache and key-value storage.
+//!
+//! | Field                  | Description                                     |
+//! | ---------------------- | ----------------------------------------------- |
+//! | `enabled`              | Enables Redis integration.                      |
+//! | `host` / `port`        | Connection settings.                            |
+//! | `client-type`          | Redis client implementation.                    |
+//! | `lettuce.pool`         | Connection pool configuration.                  |
+//! | `repositories.enabled` | Enables repository abstraction backed by Redis. |
+//!
+//!
+//! ### *Relational Databases*
+//!
+//! Defines a list of database connections used by the application.
+//!
+//! Each database entry supports:
+//!
+//! - Connection pooling configuration
+//! - Timeouts and lifecycle settings
+//! - SQL logging control
+//! - Independent enable/disable toggle
+//!
+//! This allows multiple data sources (e.g., API DB, job processing DB) to coexist in the same runtime.
+//!
+//! | Field            | Description                                                                                       |
+//! | ---------------- | ------------------------------------------------------------------------------------------------- |
+//! | `name`           | Logical name of the database connection used by the server.                                       |
+//! | `enabled`        | Enables or disables this database configuration. When `false`, the connection is not initialized. |
+//! | `url`            | Database connection string used to establish the connection.                                      |
+//! | `min-pool-size`  | Minimum number of connections maintained in the pool.                                             |
+//! | `max-pool-size`  | Maximum number of connections allowed in the pool.                                                |
+//! | `logging`        | Enables query and connection logging for this database.                                           |
+//! | `aquire-timeout` | Maximum time (in seconds) to wait when acquiring a connection from the pool.                      |
+//! | `max-lifetime`   | Maximum lifetime (in minutes) of                                                                  |
+//!
+//! > Important: The framework currently supports only SQLite, PostgreSQL, MySQL, MariaDB, and
+//! > Microsoft SQL Server databases.
+//!
+//! ### *BigQuery Database Connection*
+//!
+//! This section defines the configuration parameters required to establish a secure connection
+//! to Google BigQuery, the fully managed data warehouse provided by Google. These settings allow
+//! the server to authenticate, select the target project and dataset, and control execution
+//! behavior for queries. .
+//!
+//! | Field          | Description                                 |
+//! | -------------- | ------------------------------------------- |
+//! | `enabled`      | Enables BigQuery access.                    |
+//! | `print-tables` | Logs available tables during startup.       |
+//! | `region`       | Dataset region.                             |
+//! | `project`      | Google Cloud project identifier.            |
+//! | `credential`   | Base64-encoded service account credentials. |
+//! | `dataset`      | List of datasets used by the application.   |
+//!
+//!
+//! ## Metrics
+//!
+//! Controls application observability and monitoring integration.
+//!
+//! | Field      | Description                             |
+//! | ---------- | --------------------------------------- |
+//! | `enabled`  | Enables metrics collection.             |
+//! | `app-name` | Identifier used when exporting metrics. |
+//!
+//!
+//! ## Runtime Notes
+//!
+//! - Disabled components remain configured but inactive.
+//! - Secrets should be externalized in production environments.
+//! - Configuration values can be overridden via environment variables or CLI parameters.
+//! - The configuration is validated during server startup.
+//!
 use config::{Case, Config, ConfigError, Environment, File, FileFormat};
 use jsonwebtoken::jwk::{Jwk, JwkSet};
 #[allow(unused)]

@@ -37,9 +37,9 @@ security, and scalability.
     - [**`path`**](#path)
     - [**`authorize`**](#authorize)
   - [Examples](#examples)
-    - [**`Single role`**:](#single-role)
-    - [**`Any role`**:](#any-role)
-    - [**`All roles`**:](#all-roles)
+    - [**`Single role`**](#single-role)
+    - [**`Any role`**](#any-role)
+    - [**`All roles`**](#all-roles)
 - [YAML-based server configuration file](#yaml-based-server-configuration-file)
   - [Server](#server)
   - [CORS](#cors)
@@ -53,6 +53,14 @@ security, and scalability.
   - [Metrics](#metrics)
   - [Runtime Notes](#runtime-notes)
 - [🔧 Development Setup](#-development-setup)
+- [🔬 Test Environment Infrastructure](#-test-environment-infrastructure)
+  - [Architecture Overview](#architecture-overview)
+  - [Blocking Execution Helper](#blocking-execution-helper)
+  - [Container Utilities](#container-utilities)
+    - [Supported Services](#supported-services)
+  - [Usage](#usage)
+  - [Concurrency Model](#concurrency-model)
+  - [Safety Guarantees](#safety-guarantees)
 - [📦 Project Dependencies](#-project-dependencies)
 - [📄 License](#-license)
 - [🤝 Contributing](#-contributing)
@@ -304,7 +312,7 @@ authorize = "hasAllRoles(ROLE_ADMIN, ROLE_USER)"
 
 ### Examples
 
-#### **`Single role`**:
+#### **`Single role`**
 
 ```rust
 #[secured(method = "post", path = "/v1/user", authorize = "ROLE_ADMIN")]
@@ -313,7 +321,7 @@ pub async fn create_user_endpoint(...) -> HttpResponse {
 }
 ```
 
-#### **`Any role`**:
+#### **`Any role`**
 
 ```rust
 #[secured(
@@ -326,7 +334,7 @@ pub async fn get_user_endpoint(...) -> HttpResponse {
 }
 ```
 
-#### **`All roles`**:
+#### **`All roles`**
 
 ```rust
 #[secured(
@@ -509,6 +517,145 @@ cargo fmt
 # Check for issues
 cargo clippy
 ```
+
+## 🔬 Test Environment Infrastructure
+
+The framework provides utilities for bootstrapping and managing an isolated
+integration test environment powered by Docker containers and an async
+server runtime.
+
+It is designed to:
+
+- Provision and manage test containers (e.g., Postgres, Keycloak);
+- Coordinate initialization and shutdown across threads;
+- Provide global access to running containers;
+- Ensure deterministic teardown after tests complete.
+
+The module is intended for integration and end-to-end testing scenarios
+where external dependencies must be provisioned dynamically.
+
+### Architecture Overview
+
+The test environment follows a controlled lifecycle with three main phases:
+
+1. **Setup Phase**
+  - Initializes logging
+  - Starts required containers
+  - Executes optional post-initialization tasks
+  - Signals readiness to the test runtime
+
+2. **Execution Phase**
+  - Tests run against the live server and provisioned services
+  - Containers remain active and globally accessible
+
+3. **Teardown Phase**
+  - Receives shutdown signal
+  - Stops and removes all registered containers
+  - Releases global resources
+
+Synchronization between phases is handled using global channels and locks.
+
+### Blocking Execution Helper
+
+The module provides an internal utility for executing async code from
+synchronous contexts by creating a dedicated Tokio runtime. This is used
+primarily during container shutdown and cleanup.
+
+---
+
+### Container Utilities
+
+The `containers` submodule provides helpers for starting commonly used
+infrastructure services.
+
+#### Supported Services
+
+- **Postgres**
+  Starts a database container with optional initialization scripts,
+  network configuration, and credentials.
+
+- **Keycloak**
+  Starts an identity provider container with realm import support and
+  readiness checks.
+
+Each container:
+
+- Waits for readiness before returning
+- Registers itself for automatic teardown
+- Returns a connection URI for test usage
+
+---
+
+### Usage
+
+```rust
+#[ctor::ctor]
+pub fn setup() {
+    rust_microservice::test::setup(
+        async || {
+            let mut settings = load_test_settings();
+
+            let mut containers: Vec<Box<dyn Any + Send>> = vec![];
+
+            let postgres = start_postgres_container(&mut settings).await;
+            if let Ok(postgres) = postgres {
+                containers.push(Box::new(postgres.0));
+            }
+
+            let keycloak = start_keycloak_container(&mut settings).await;
+            if let Ok(keycloak) = keycloak {
+                containers.push(Box::new(keycloak.0));
+            }
+
+            (containers, settings)
+        },
+        || async {
+            info!("Getting authorization token ...");
+            let oauth2_token = get_auth_token().await.unwrap_or("".to_string());
+            TOKEN.set(oauth2_token);
+            info!("Authorization token: {}...", token()[..50].bright_blue());
+        },
+    );
+}
+ ```
+
+Teardown is handled automatically by the `dtor` attribute.
+```rust
+#[ctor::dtor]
+pub fn teardown() {
+    rust_microservice::test::teardown();
+}
+```
+
+
+### Concurrency Model
+
+The environment runs inside a dedicated multi-thread Tokio runtime
+spawned in a background thread. This allows synchronous test code to
+coordinate with async infrastructure without requiring async test
+functions.
+
+Communication is performed via channels that coordinate:
+
+- Initialization completion
+- Container stop commands
+- Shutdown confirmation
+
+
+### Safety Guarantees
+
+- Containers remain alive for the full test lifecycle
+- Teardown is deterministic and blocking
+- Global state is initialized exactly once
+- Async resources are properly awaited before shutdown
+
+>The environment assumes Docker is available and reachable using default
+>configuration. Failure to connect to the Docker daemon will cause setup
+>to abort.
+
+>All containers are forcefully removed during teardown to ensure a clean
+>test environment for subsequent runs.
+
 
 ## 📦 Project Dependencies
 
