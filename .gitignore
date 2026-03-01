@@ -5,4 +5,13 @@
 /target
 .binaries/
 
+### Act Resource Files ###
+.actrc
+.actrc.json
 
+### env files ###
+.env
+.env.local
+.env.development
+.env.test
+.env.production
