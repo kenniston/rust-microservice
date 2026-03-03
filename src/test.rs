@@ -158,7 +158,7 @@
 //!
 //! ## Typical Usage Pattern
 //!
-//! ```rust
+//! ```ignore
 //! #[ctor::ctor]
 //! pub fn setup() {
 //!     rust_microservice::test::setup(
@@ -192,7 +192,7 @@
 //! ```
 //!
 //! Teardown is handled automatically by the `dtor` attribute.
-//! ```rust
+//! ```ignore
 //! #[ctor::dtor]
 //! pub fn teardown() {
 //!     rust_microservice::test::teardown();

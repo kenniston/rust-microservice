@@ -41,7 +41,9 @@ pub mod oauth2 {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```no_run
+    /// use rust_microservice::Token;
+    ///
     /// let token = Token {
     ///     access_token: Some("abc123".to_string()),
     ///     expires_in: Some(3600),

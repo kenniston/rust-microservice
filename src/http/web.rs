@@ -445,12 +445,13 @@ fn configure_cors(settings: &Settings) -> Cors {
 ///
 /// # Example
 ///
-/// ```rust
-/// let wrappers = ServerWrappers {
-///     metrics_enabled: true,
-///     prometheus: prometheus_metrics,
-///     cors: cors_config,
-/// };
+/// ```no_run
+/// use rust_microservice::{server_wrappers, ServerWrappers, settings::Settings};
+///
+/// let settings = Settings::new("./config.toml")
+///     .unwrap_or_else(|e| panic!("Failed to load settings: {e}"));
+/// let wrappers = server_wrappers(&settings).unwrap();
+///
 /// ```
 pub struct ServerWrappers {
     pub metrics_enabled: bool,

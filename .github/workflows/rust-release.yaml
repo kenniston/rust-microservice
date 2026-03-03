@@ -1,0 +1,45 @@
+on:
+  workflow_call:
+
+jobs:
+  rust-release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest] #[ubuntu-latest, macOS-latest, windows-latest]
+        include:
+        - os: ubuntu-latest
+          target: x86_64-unknown-linux-musl
+      # - os: macOS-latest
+      #   target: x86_64-apple-darwin
+      # - os: windows-latest
+      #   target: x86_64-pc-windows-msvc
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # Download release artifacts from the build job
+      - name: Download Release Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: bundle-${{ github.ref_name }}
+          path: ./.release-artifacts
+
+      # Extract the release artifact from the build job
+      - name: Extract release artifacts
+        run: |
+          echo "ℹ️ Extracting release artifacts..."
+          unzip ./.release-artifacts/bundle-${{ github.ref_name }}.zip -d ./.release-artifacts
+          echo "✅ Release artifacts extracted successfully."
+
+      # Release to GitHub Releases
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          body_path: CHANGELOG.md
+          repository: kenniston/rust-microservice
+          files: |
+            ./.release-artifacts/target/${{ matrix.target }}/release/server-${{ matrix.target }}
+            ./.release-artifacts/target/${{ matrix.target }}/release/server-${{ matrix.target }}.exe

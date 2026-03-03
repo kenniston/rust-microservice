@@ -771,7 +771,9 @@ pub type Result<T, E = ServerError> = std::result::Result<T, E>;
 ///
 /// # Example
 ///
-/// ```rust
+/// ```no_run
+/// use rust_microservice::ServerError;
+///
 /// fn start_server() -> Result<(), ServerError> {
 ///     // Example failure
 ///     Err(ServerError::NotInitialized)

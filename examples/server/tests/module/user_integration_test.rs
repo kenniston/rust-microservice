@@ -194,6 +194,7 @@ async fn test_find_user_by_id() {
     let request = test::TestRequest::default()
         .uri("/v1/user/3")
         .method(Method::GET)
+        .insert_header((AUTHORIZATION, token()))
         .insert_header(Accept::json())
         .to_request();
 
@@ -219,6 +220,7 @@ async fn test_user_by_id_not_found() {
     let request = test::TestRequest::default()
         .uri("/v1/user/999")
         .method(Method::GET)
+        .insert_header((AUTHORIZATION, token()))
         .insert_header(Accept::json())
         .to_request();
 

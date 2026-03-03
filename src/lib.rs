@@ -199,7 +199,7 @@ pub use server_macros::database;
 //
 /// Macro usage format:
 //
-/// ```rust
+/// ```no_run
 /// #[secured(method = "...", path = "...", authorize = "...")]
 /// ```
 ///
@@ -225,9 +225,7 @@ pub use server_macros::database;
 ///
 /// Example:
 ///
-/// ```rust
-/// path = "/v1/user/{id}"
-/// ```
+/// `path = "/v1/user/{id}"`
 ///
 /// ### **`authorize`**
 ///
@@ -237,56 +235,62 @@ pub use server_macros::database;
 ///
 /// 1. `Single role`: validates one role in the token.
 ///
-/// ```rust
-/// authorize = "ROLE_ADMIN"
-/// ```
+/// `authorize = "ROLE_ADMIN"`
 ///
 /// 2. `hasAnyRole`: validates that at least one role in the list exists in the token.
 ///
-/// ```rust
-/// authorize = "hasAnyRole(ROLE_ADMIN, ROLE_USER)"
-/// ```
+/// `authorize = "hasAnyRole(ROLE_ADMIN, ROLE_USER)"`
 ///
 /// 3. `hasAllRoles`: validates that all roles in the list exist in the token.
 ///
-/// ```rust
-/// authorize = "hasAllRoles(ROLE_ADMIN, ROLE_USER)"
-/// ```
+/// `authorize = "hasAllRoles(ROLE_ADMIN, ROLE_USER)"`
 ///
 /// ## Examples
 ///
 /// ### **`Single role`**:
 ///
-/// ```rust
+/// ```no_run
+/// use rust_microservice::secured;
+/// use actix_web::{HttpResponse, delete, get, http::StatusCode, post, put, web};
+///
 /// #[secured(method = "post", path = "/v1/user", authorize = "ROLE_ADMIN")]
-/// pub async fn create_user_endpoint(...) -> HttpResponse {
+/// pub async fn create_user_endpoint() -> HttpResponse {
 ///     // handler body
+///     HttpResponse::Ok().finish()
 /// }
 /// ```
 ///
 /// ### **`Any role`**:
 ///
-/// ```rust
+/// ```no_run
+/// use rust_microservice::secured;
+/// use actix_web::{HttpResponse, delete, get, http::StatusCode, post, put, web};
+///
 /// #[secured(
 ///     method = "get",
 ///     path = "/v1/user/{id}",
 ///     authorize = "hasAnyRole(ROLE_ADMIN, ROLE_USER)"
 /// )]
-/// pub async fn get_user_endpoint(...) -> HttpResponse {
+/// pub async fn get_user_endpoint() -> HttpResponse {
 ///     // handler body
+///     HttpResponse::Ok().finish()
 /// }
 /// ```
 ///
 /// ### **`All roles`**:
 ///
-/// ```rust
+/// ```no_run
+/// use rust_microservice::secured;
+/// use actix_web::{HttpResponse, delete, get, http::StatusCode, post, put, web};
+///
 /// #[secured(
 ///     method = "delete",
 ///     path = "/v1/user/{id}",
 ///     authorize = "hasAllRoles(ROLE_ADMIN, ROLE_AUDITOR)"
 /// )]
-/// pub async fn delete_user_endpoint(...) -> HttpResponse {
+/// pub async fn delete_user_endpoint() -> HttpResponse {
 ///     // handler body
+///    HttpResponse::Ok().finish()
 /// }
 /// ```
 pub use server_macros::secured;

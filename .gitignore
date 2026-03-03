@@ -8,6 +8,8 @@
 ### Act Resource Files ###
 .actrc
 .actrc.json
+.artifacts
+.release-artifacts
 
 ### env files ###
 .env

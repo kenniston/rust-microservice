@@ -1,0 +1,40 @@
+on:
+  workflow_call:
+
+env:
+  CARGO_TERM_COLOR: always    
+
+jobs:
+  rust-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # Setup the Rust toolchain
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      # Run Clippy for linting
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      # Run Rustfmt for code formatting
+      - name: Run Rustfmt
+        run: cargo fmt --all -- --check
+
+      # Run Server Example Tests
+      - name: Run Server Example Tests
+        run: |
+          echo "ℹ️ Running tests..."
+          cargo test -p server
+          echo "✅ Tests completed successfully."
+
+      # Run Rust Microservices Tests
+      - name: Run Rust Microservices Tests
+        run: |
+          echo "ℹ️ Running tests..."
+          cargo test --all-features
+          echo "✅ Tests completed successfully."
