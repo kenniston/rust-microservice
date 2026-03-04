@@ -32,13 +32,19 @@ jobs:
           unzip ./.release-artifacts/bundle-${{ github.ref_name }}.zip -d ./.release-artifacts
           echo "✅ Release artifacts extracted successfully."
 
+      - name: Extract current release notes
+        run: |
+          echo "ℹ️ Extracting current release notes from CHANGELOG.md..."
+          sed -n '/^## /,/^## /p' CHANGELOG.md | head -n -1 | sed '1d' > RELEASE.md
+          echo "✅ Current release notes extracted successfully."
+
       # Release to GitHub Releases
       - name: Release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          body_path: CHANGELOG.md
+          body_path: RELEASE.md
           repository: kenniston/rust-microservice
           files: |
             ./.release-artifacts/target/${{ matrix.target }}/release/server-${{ matrix.target }}

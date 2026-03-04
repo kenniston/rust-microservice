@@ -57,3 +57,4 @@ Example:
 pub async fn create_user_endpoint(user: web::Json<UserDTO>) -> HttpResponse {
   ...
 }
+

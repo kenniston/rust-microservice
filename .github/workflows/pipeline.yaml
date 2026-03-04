@@ -20,7 +20,7 @@ jobs:
     uses: ./.github/workflows/rust-test.yaml
 
   release:
-    # needs: build
+    needs: build
     # Publish release artifacts to GitHub Releases
     uses: ./.github/workflows/rust-release.yaml
 

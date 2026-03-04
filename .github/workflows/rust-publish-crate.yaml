@@ -1,0 +1,33 @@
+on:
+  workflow_call:
+
+jobs:
+  rust-publish-crate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # Setup the Rust toolchain
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      # Login to crates.io using the API token stored in GitHub Secrets
+      - name: cargo login
+        run: |-
+          echo ${{ secrets.CRATES_IO_API_TOKEN }} | cargo login
+
+      # Publish the crate to crates.io
+      - name: "cargo release publish"
+        run: |-
+          cargo release \
+            publish \
+            --workspace \
+            --all-features \
+            --allow-branch HEAD \
+            --no-confirm \
+            --no-verify \
+            --execute
+
+
+
