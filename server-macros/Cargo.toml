@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 description = "A set of macros for generating code for the microservices framework."
 documentation = "https://docs.rs/server-macros"
-repository = "https://github.com/kenniston/server-framework/server-macros"
+repository = "https://github.com/kenniston/rust-microservice/server-macros"
 readme = "README.md"
 license = "MIT"
 keywords = ["code-gen", "macros", "initialization", "mapper", "api"]
@@ -20,3 +20,16 @@ syn = { version = "2.0.111", features = ["full", "extra-traits"] }
 quote = "1.0.42"
 proc-macro2 = "1.0.103"
 walkdir = "2.4.0"
+
+[profile.release]
+strip = true
+#opt-level = "s"
+debug = false
+lto = true
+#codegen-units = 1
+
+[profile.dev.package."*"]
+debug = 0
+debug-assertions = false
+overflow-checks = false
+split-debuginfo = "unpacked"

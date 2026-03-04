@@ -17,7 +17,7 @@ exclude = [".git", ".idea/", ".vscode/", "examples/"]
 memory-database = []
 
 [dependencies]
-server-macros = { path = "server-macros", version = "0.1.0" }
+server-macros = { version = "0.1.0", path = "server-macros/" }
 clap = { version = "4.5.55", features = ["derive", "color", "help", "env"] }
 rust-embed = { version = "8.11.0", features = [
     "interpolate-folder-path",

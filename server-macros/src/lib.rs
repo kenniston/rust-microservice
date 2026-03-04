@@ -1,83 +1,327 @@
-//! # Server Framework Macros
+//! # 🚀 Rust Microservice Macros
 //!
-//! A procedural macro crate providing declarative configuration loading,
-//! compile-time controller mapping, and deterministic server bootstrap
-//! generation for high-performance Rust API frameworks.
+//! A procedural macro crate designed to power the
+//! [`rust_microservice`](https://crates.io/crates/rust_microservice)
+//! ecosystem with compile-time server generation, automatic controller
+//! discovery, OpenAPI integration, authentication enforcement, and
+//! database injection.
 //!
-//! This crate is intended to eliminate boilerplate in projects following
-//! a modular API architecture, where routing, configuration, and server
-//! orchestration should be derived from static metadata rather than
-//! dynamic runtime registration.
-//!
-//! ---
-//!
-//! ## 1. Crate Purpose
-//!
-//! This crate offers:
-//!
-//! - **Compile-time API controller registration**, avoiding runtime reflection.
-//! - **Deterministic server initialization**, generating the necessary
-//!   runtime code to start an HTTP server and attach controllers.
-//! - **Strict compile-time invariants**, ensuring controllers, routes,
-//!   and configuration types remain coherent across refactors.
-//!
-//! It integrates naturally with async runtimes (Tokio) and HTTP frameworks
-//! such as `actix-web`, `axum`, or custom routers, depending on how the
-//! integrating crate expands its server initialization logic.
+//! This crate eliminates runtime registration patterns by generating
+//! deterministic, compile-time server bootstrap logic.
 //!
 //! ---
 //!
-//! ## 2. Internal Architecture
+//! # 🎯 Design Goals
 //!
-//! The procedural macros provided by this crate rely on:
+//! - ✅ Zero runtime reflection
+//! - ✅ Compile-time controller discovery
+//! - ✅ Deterministic OpenAPI generation
+//! - ✅ Integrated JWT security middleware
+//! - ✅ Declarative database injection
+//! - ✅ Strict compile-time validation
 //!
-//! - `syn` for AST parsing
-//! - `quote` for code emission
-//! - `proc_macro` and `proc_macro2` for integration with Rust's compiler
-//!
-//! The macro expansion pipeline follows these steps:
-//!
-//! 1. **Parse input tokens**: Identify annotated items (structs,
-//!    impl blocks, functions, or modules).
-//! 2. **Extract metadata**:
-//!    - Attribute values (e.g., `path`, `method`, `version`)
-//!    - Type information used for configuration deserialization
-//!    - HTTP handler signatures
-//! 3. **Validate structure**:
-//!    - Verify controller methods follow async conventions
-//!    - Ensure configuration types implement or derive supported traits
-//!    - Ensure routes do not conflict at compile time
-//! 4. **Generate deterministic expansion**:
-//!    - Create registry modules
-//!    - Emit initialization functions
-//!    - Generate routing descriptors
-//!    - Produce integration glue between config + controllers + server init
-//!
-//! As a design constraint, this crate **avoids runtime registration**, relying
-//! entirely on generated modules and symbol exposure for route aggregation.
+//! All routing, OpenAPI metadata, middleware wrapping, and database
+//! bindings are generated at compile time using Rust’s procedural macro
+//! system.
 //!
 //! ---
 //!
-//! ## 3. Provided Macros
+//! # 🏗️ Architecture Overview
 //!
-//! ### 3.1 `#[api_server]`
+//! This crate is implemented using:
 //!
-//! Annotates a configuration struct used to bootstrap the API server.
+//! - `proc_macro`
+//! - `proc_macro2`
+//! - `syn` (AST parsing)
+//! - `quote` (token generation)
+//! - `walkdir` (controller discovery)
 //!
-//! Responsibilities:
-//! - Generates a strongly-typed configuration loader.
-//! - Load server configuration (YAML) using `config`-compatible input.
-//! - Merges environment variables following a deterministic precedence model.
-//! - Emits validation logic ensuring required fields are set at startup.
+//! ## Macro Expansion Pipeline
 //!
-//! **Expansion Output**
-//! - `main` → generated a new version of the main function to configure and starts the server.
-//! - `configure` → generated a configure method to initialize routes in the server.
+//! 1. Parse attribute arguments (`key = value` pairs)
+//! 2. Parse annotated Rust items (`ItemFn`, modules, etc.)
+//! 3. Load and inspect controller files
+//! 4. Extract Actix-Web handlers
+//! 5. Generate:
+//!    - Server bootstrap
+//!    - Route registration
+//!    - Swagger/OpenAPI specification
+//!    - JWT middleware wrappers
+//!    - Database injection logic
 //!
-//! **Requirements**
-//! - Struct must derive or implement `serde::Deserialize`.
-//! - All fields must have a defined type at compile time.
-//! - Unsupported field types cause a compile error.
+//! No runtime route aggregation occurs — all handlers are resolved
+//! during compilation.
+//!
+//! ---
+//!
+//! # 🧩 Provided Macros
+//!
+//! This crate exposes three primary procedural attribute macros:
+//!
+//! - `#[api_server]`
+//! - `#[secured]`
+//! - `#[database]`
+//!
+//! ---
+//!
+//! # 🌐 `#[api_server]`
+//!
+//! Generates the full HTTP server bootstrap and controller registration
+//! logic for an `actix-web` application.
+//!
+//! ## Responsibilities
+//!
+//! - Recursively scans controller directories
+//! - Registers all HTTP handlers
+//! - Generates Swagger UI configuration
+//! - Generates OpenAPI documentation using `utoipa`
+//! - Optionally initializes database connections
+//! - Wraps the main function with `#[tokio::main]`
+//! - Initializes and runs the global `Server`
+//!
+//! ## Supported Attributes
+//!
+//! | Attribute | Type | Description |
+//! |------------|------|------------|
+//! | `controllers_path` | `&str` | Comma-separated directories containing controllers |
+//! | `openapi_title` | `&str` | OpenAPI title |
+//! | `openapi_api_name` | `&str` | OpenAPI tag name |
+//! | `openapi_api_description` | `&str` | OpenAPI tag description |
+//! | `openapi_auth_server` | `&str` | OAuth2 token URL fallback |
+//! | `database` | `"true" / "false"` | Enables SeaORM database initialization |
+//! | `banner` | `&str` | Startup banner printed during server initialization |
+//!
+//! ## Example
+//!
+//! ```rust,no_run
+//! use rust_microservice::ServerApi; // api_server was renamed to ServerApi for better ergonomics
+//!
+//! #[ServerApi(
+//!     controllers_path = "src/controllers",
+//!     openapi_title = "🌍 My API",
+//!     openapi_api_description = "Example API",
+//!     database = "true"
+//! )]
+//! async fn start() -> rust_microservice::Result<(), String> {}
+//! ```
+//!
+//! ## Generated Behavior
+//!
+//! - Wraps your function with `#[tokio::main]`
+//! - Discovers all Actix-Web handlers
+//! - Generates:
+//!   - `register_endpoints`
+//!   - `ApiDoc` (`utoipa::OpenApi`)
+//!   - Swagger UI endpoint `/swagger-ui/*`
+//!
+//! ---
+//!
+//! # 🔐 `#[secured]`
+//!
+//! Protects an Actix-Web endpoint with JWT authentication and
+//! role-based authorization.
+//!
+//! Internally generates:
+//!
+//! - A middleware module
+//! - A wrapper using `actix_web::middleware::from_fn`
+//! - Automatic role validation via `Server::validate_jwt`
+//!
+//! ## Supported Attributes
+//!
+//! | Attribute | Description |
+//! |------------|-------------|
+//! | `method` | HTTP method (`get`, `post`, etc.) |
+//! | `path` | Route path |
+//! | `authorize` | Role expression |
+//!
+//! ## Authorization Formats
+//!
+//! ### Single Role
+//!
+//! ```text
+//! authorize = "ROLE_ADMIN"
+//! ```
+//!
+//! ### Any Role
+//!
+//! ```text
+//! authorize = "hasAnyRole(ROLE_ADMIN, ROLE_USER)"
+//! ```
+//!
+//! ### All Roles
+//!
+//! ```text
+//! authorize = "hasAllRoles(ROLE_ADMIN, ROLE_AUDITOR)"
+//! ```
+//!
+//! ## Example
+//!
+//! ```rust,no_run
+//! use rust_microservice::secured;
+//! use actix_web::HttpResponse;
+//!
+//! #[secured(
+//!     method = "get",
+//!     path = "/v1/users",
+//!     authorize = "hasAnyRole(ROLE_ADMIN, ROLE_USER)"
+//! )]
+//! pub async fn list_users() -> HttpResponse {
+//!     HttpResponse::Ok().finish()
+//! }
+//! ```
+//!
+//! ## Security Validation
+//!
+//! The middleware validates:
+//!
+//! - JWT presence
+//! - Signature
+//! - Expiration (`exp`)
+//! - Issuer (`iss`)
+//! - Required roles
+//!
+//! If validation fails → `401 Unauthorized`.
+//!
+//! ---
+//!
+//! # 🛢️ `#[database]`
+//!
+//! Injects a SeaORM `DatabaseConnection` into a repository function.
+//!
+//! ## Required Attributes
+//!
+//! | Attribute | Description |
+//! |------------|-------------|
+//! | `name` | Database configuration name |
+//! | `error` | Error variant returned if connection is unavailable |
+//!
+//! The macro injects:
+//!
+//! ```rust
+//! let db = Server::global()
+//!     .database_with_name("name")?;
+//! ```
+//!
+//! ## Example
+//!
+//! ```rust,no_run
+//! use rust_microservice::database;
+//!
+//! #[database(name = "api", error = "UserError::DatabaseNotConfigured")]
+//! pub async fn find_user(id: i32) -> Result<()> {
+//!     // `db` is available here
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ---
+//!
+//! # 🔎 Controller Discovery
+//!
+//! The `api_server` macro:
+//!
+//! - Traverses `controllers_path`
+//! - Parses each `.rs` file using `syn`
+//! - Extracts functions annotated with:
+//!
+//! ```text
+//! #[get]
+//! #[post]
+//! #[put]
+//! #[delete]
+//! #[patch]
+//! #[head]
+//! #[options]
+//! #[trace]
+//! #[connect]
+//! #[secured]
+//! ```
+//!
+//! These handlers are automatically registered into
+//! `actix_web::web::ServiceConfig`.
+//!
+//! ---
+//!
+//! # 📄 OpenAPI Generation
+//!
+//! Uses `utoipa` to generate:
+//!
+//! - `#[derive(OpenApi)]`
+//! - Swagger UI configuration
+//! - OAuth2 security scheme
+//! - Global security requirements
+//!
+//! The security scheme is dynamically configured from:
+//!
+//! ```rust
+//! Server::global()?.settings().get_auth2_token_url()
+//! ```
+//!
+//! ---
+//!
+//! # ⚙️ Internal Utility Structures
+//!
+//! ### `KeyValue`
+//!
+//! Parses:
+//!
+//! ```text
+//! key = value
+//! ```
+//!
+//! ### `ArgList`
+//!
+//! Parses:
+//!
+//! ```text
+//! key1 = value1, key2 = value2
+//! ```
+//!
+//! These power all attribute parsing in this crate.
+//!
+//! ---
+//!
+//! # 🧠 Compile-Time Guarantees
+//!
+//! - Controllers must be valid Rust modules
+//! - Handlers must use supported HTTP attributes
+//! - Database names must exist at runtime
+//! - Invalid macro parameters cause compile errors
+//!
+//! ---
+//!
+//! # 🧪 Runtime Integration
+//!
+//! Although this crate generates compile-time code,
+//! runtime behavior depends on:
+//!
+//! - `actix-web`
+//! - `tokio`
+//! - `utoipa`
+//! - `sea-orm`
+//! - `rust_microservice::Server`
+//!
+//! ---
+//!
+//! # 📌 Summary
+//!
+//! This macro crate transforms a modular Rust project into a fully
+//! initialized HTTP API server with:
+//!
+//! - Automatic route wiring
+//! - JWT security enforcement
+//! - OpenAPI documentation
+//! - Swagger UI
+//! - Database injection
+//!
+//! All achieved with minimal boilerplate and strict compile-time guarantees.
+//!
+//! ---
+//!
+//! 🦀 Built for high-performance Rust microservices.
+//! Deterministic. Secure. Compile-time powered.
+//!
 #![allow(clippy::expect_fun_call)]
 #![allow(clippy::bind_instead_of_map)]
 #![allow(clippy::cmp_owned)]
@@ -176,29 +420,49 @@ impl Parse for ArgList {
     }
 }
 
-// Bootstraps the API server and registers all controllers using Actix-Web.
-//
-// The `api_server` macro generates the microservice’s `main` function,
-// configures the Actix-Web `HttpServer`, and maps each controller’s static
-// handler methods into routes. It simplifies service initialization by
-// automatically wiring controllers and server settings.
-//
-// # Usage
-//
-// Controllers must expose static Actix-Web–compatible handler methods.
-//
-// ```rust
-// #[api_server(
-//     controllers_path = "src/module/user, src/module/admin",
-// )]
-// fn main() {
-//    //The macro will generate the server bootstrap code here.
-// }
-// ```
-//
-// This macro generates the server startup code, registers all routes derived
-// from the provided controllers, and binds the application to the configured
-// address.
+/// # 🔗 API Server Macro
+///
+/// The `api_server` macro is a procedural macro that generates the code necessary to
+/// start an `actix-web` HTTP server with support for OpenAPI documentation and
+/// a health check endpoint.
+///
+/// The `api_server` macro takes the following attributes:
+///
+/// - `controllers_path`: A comma-separated list of paths to modules containing
+///   controllers. The macro will recursively traverse the directories and generate
+///   code to register the controllers with the HTTP server.
+///
+/// - `openapi_title`: A string used as the title of the OpenAPI documentation.
+///
+/// - `openapi_api_description`: A string used as the description of the OpenAPI
+///   documentation.
+///
+/// - `database`: A boolean indicating whether the microservice should enable database
+///   integration. If set to `true`, the macro will generate code to initialize the
+///   database connection pool using the `sea_orm` crate.
+///
+/// - `banner`: A string used as the banner of the microservice. The banner is displayed
+///   in the server logs during startup.
+///
+/// Example of a minimal server bootstrap using this crate:
+///
+/// ```rust
+/// use rust_microservice::ServerApi;
+///
+/// #[ServerApi(
+///     controllers_path = "src/module, src/controllers",
+///     openapi_title = "🌐 Rest API Server",
+///     openapi_api_description = "Rest API OpenApi Documentation built with Rust 🦀.",
+///     database = "true",
+///     banner = r#"
+///             _~^~^~_         ___    ___   ____    ____
+///         \) /  o o  \ (/    / _ |  / _ \ /  _/   / __/___  ____ _  __ ___  ____
+///           '_   -   _'     / __ | / ___/_/ /    _\ \ / -_)/ __/| |/ //! -_)/ __/
+///           / '-----' \    /_/ |_|/_/   /___/   /___/ \__//!_/   |___/ \__//!_/
+///     "#
+/// )]
+/// async fn start_server() -> rust_microservice::Result<(), String> {}
+/// ```
 #[proc_macro_attribute]
 pub fn api_server(attrs: TokenStream, item: TokenStream) -> TokenStream {
     let main_fn = parse_macro_input!(item as ItemFn);
@@ -733,29 +997,116 @@ fn get_arg_string_value(arg_list: &ArgList, key: String, default: String) -> Str
     value.unwrap_or(default)
 }
 
-/// Marks a function as requiring authentication and authorization.
+/// # 🔐 Secured Macro
 ///
-/// The `secured` macro can be applied to functions to protect them from unauthorized access.
-/// It takes a list of arguments, which can include the `roles` configuration parameter.
+/// The `Secured` macro protects `actix-web` endpoints by attaching an authentication middleware.
 ///
-/// The `roles` parameter is a comma-separated list of roles that are allowed to access the function.
-/// If the `roles` parameter is missing or empty, the function is open to all authenticated users.
+/// When applied to an endpoint, it validates:
 ///
-/// Example usage:
+/// - JWT presence in the request.
+/// - JWT signature.
+/// - JWT expiration time (`exp` claim).
+/// - JWT issuer (`iss` claim).
+/// - Required roles from the `authorize` expression.
 ///
-/// #[utoipa::path(
-///     tag = "Delete a user by ID",
-///     responses(
-///         (status = 400, description = "Returns an error if the deletion fails.", body = String),
-///     )
-///  )]
-/// #[get("/v2/user/{user}")]
-/// #[secured(roles = "ROLE_ADMIN")]
-/// pub async fn create_delete_endpoint(user: web::Json<UserDTO>) -> HttpResponse {
-///     HttpResponse::Ok()
-///         .content_type("application/json")
-///         .body("ok".to_string())
+/// ## Attribute Reference
+//
+/// Macro usage format:
+//
+/// ```no_run
+/// #[secured(method = "...", path = "...", authorize = "...")]
+/// ```
+///
+/// ### **`method`**
+///
+/// Defines the HTTP method used to map the endpoint in Actix-Web.
+///
+/// Supported values:
+///
+/// - `get`
+/// - `post`
+/// - `put`
+/// - `delete`
+/// - `head`
+/// - `connect`
+/// - `options`
+/// - `trace`
+/// - `patch`
+///
+/// ### **`path`**
+///
+/// Defines the endpoint path to be registered by Actix-Web.
+///
+/// Example:
+///
+/// `path = "/v1/user/{id}"`
+///
+/// ### **`authorize`**
+///
+/// Defines the required role rule that must be satisfied by roles present in the JWT.
+///
+/// Supported formats:
+///
+/// 1. `Single role`: validates one role in the token.
+///
+/// `authorize = "ROLE_ADMIN"`
+///
+/// 2. `hasAnyRole`: validates that at least one role in the list exists in the token.
+///
+/// `authorize = "hasAnyRole(ROLE_ADMIN, ROLE_USER)"`
+///
+/// 3. `hasAllRoles`: validates that all roles in the list exist in the token.
+///
+/// `authorize = "hasAllRoles(ROLE_ADMIN, ROLE_USER)"`
+///
+/// ## Examples
+///
+/// ### **`Single role`**:
+///
+/// ```no_run
+/// use rust_microservice::secured;
+/// use actix_web::{HttpResponse, delete, get, http::StatusCode, post, put, web};
+///
+/// #[secured(method = "post", path = "/v1/user", authorize = "ROLE_ADMIN")]
+/// pub async fn create_user_endpoint() -> HttpResponse {
+///     // handler body
+///     HttpResponse::Ok().finish()
 /// }
+/// ```
+///
+/// ### **`Any role`**:
+///
+/// ```no_run
+/// use rust_microservice::secured;
+/// use actix_web::{HttpResponse, delete, get, http::StatusCode, post, put, web};
+///
+/// #[secured(
+///     method = "get",
+///     path = "/v1/user/{id}",
+///     authorize = "hasAnyRole(ROLE_ADMIN, ROLE_USER)"
+/// )]
+/// pub async fn get_user_endpoint() -> HttpResponse {
+///     // handler body
+///     HttpResponse::Ok().finish()
+/// }
+/// ```
+///
+/// ### **`All roles`**:
+///
+/// ```no_run
+/// use rust_microservice::secured;
+/// use actix_web::{HttpResponse, delete, get, http::StatusCode, post, put, web};
+///
+/// #[secured(
+///     method = "delete",
+///     path = "/v1/user/{id}",
+///     authorize = "hasAllRoles(ROLE_ADMIN, ROLE_AUDITOR)"
+/// )]
+/// pub async fn delete_user_endpoint() -> HttpResponse {
+///     // handler body
+///    HttpResponse::Ok().finish()
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn secured(attrs: TokenStream, item: TokenStream) -> TokenStream {
     let secure_fn = parse_macro_input!(item as ItemFn);
@@ -924,34 +1275,51 @@ fn _get_security_roles(arg_list: &ArgList) -> proc_macro2::TokenStream {
     }
 }
 
-/// Wraps a function with a database connection retrieval call.
+/// # 🛢️ Database Macro
 ///
-/// This macro takes a function and wraps its body with a call to retrieve a database connection
-/// from the server's global state. The wrapped function takes a single argument, which is the database
-/// connection retrieved from the server's global state.
+/// The `database` macro is a procedural macro that injects a database connection
+/// into repository methods.
 ///
-/// The macro expects the following configuration arguments:
+/// It expects two mandatory attributes:
+/// - `name`: selects which configured database connection will be used.
+/// - `error`: defines the error variant returned when the database is not configured or
+///   database connection cannot be found.
 ///
-/// - `name`: The name of the database to retrieve from the server's global state.
-/// - `error`: The error message to return if the database connection retrieval call fails.
+/// The macro injects a variable named `db` with type `&DatabaseConnection` (seaorm),
+/// so the function body can execute queries directly.
 ///
-/// # Example
+/// Example:
 ///
 /// ```rust
+/// use rust_microservice::{Server, database};
+/// use thiserror::Error;
+///
+/// #[derive(Debug, Error)]
+/// pub enum UserError {
+///     #[error("Database is not configured")]
+///     DatabaseNotConfigured,
+///
+///     #[error("User not found")]
+///     NotFound,
+/// }
+///
+/// pub type Result<T, E = UserError> = std::result::Result<T, E>;
+///
 /// #[database(name = "api", error = "UserError::DatabaseNotConfigured")]
-/// pub async fn create_user(dto: UserDTO) -> Result<UserDTO> {
-///    let model = user::ActiveModel::from(dto);
+/// pub async fn get_user_by_id(user_id: i32) -> Result<()> {
 ///
-///     let saved = model.save(&db).await.map_err(|e| match e.sql_err() {
-///         Some(SqlErr::UniqueConstraintViolation(_)) => UserError::AlreadyExists,
-///         _ => UserError::Create(e.to_string()),
-///     })?;
+///     // Database will be injected here as `db`
 ///
-///    UserDTO::try_from(saved).map_err(|e| UserError::Conversion(e.to_string()))
+///     //user::Entity::find_by_id(user_id)
+///     //    .one(&db)
+///     //    .await
+///     //    .map_err(|_| UserError::NotFound)?
+///     //    .ok_or(UserError::NotFound)
+///     //    .map(Into::into)
+///
+///     Ok(())
 /// }
 /// ```
-///
-///
 #[proc_macro_attribute]
 pub fn database(attrs: TokenStream, item: TokenStream) -> TokenStream {
     let item_fn = parse_macro_input!(item as ItemFn);
