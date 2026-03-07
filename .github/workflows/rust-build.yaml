@@ -21,56 +21,20 @@ jobs:
       #   target: x86_64-pc-windows-msvc
 
     steps:
-      - name: Validate tag name
-        env:
-          RELEASE_NAME: ${{ github.ref_name }}
-          REGEX_PATTERN: "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
-        shell: bash
-        run: |
-          echo "ℹ️ Validating tag name..."
-          if [[ "${RELEASE_NAME}" =~ ${REGEX_PATTERN} ]]; then
-            echo "✅ Tag name is valid: ${RELEASE_NAME}"
-          else
-            echo "❌ Invalid tag name: ${RELEASE_NAME}"
-            exit 1
-          fi
-
       # Checkout the code
       - uses: actions/checkout@v6
 
-      # Setup the Rust toolchain
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Validate tag name
+        uses: ./.github/actions/check-tag
         with:
-          toolchain: stable
-          components: rustfmt, clippy
           target: ${{ matrix.target }}
+          tag: ${{ github.ref_name }}
 
-      # Configure Rust for cross-compilation
-      - name: Setup Rust Target
-        run: |
-          echo "ℹ️ Setting up Rust target for OS: ${{ matrix.os }} Target: ${{ matrix.target }}..."
-          rustup target add ${{ matrix.target }}
-
-      # Install musl for Linux targets to enable static linking
-      - name: Install musl
-        run: |
-          echo "ℹ️ Installing musl for ${{ matrix.os }}..."
-          sudo apt update
-          sudo apt -y install musl-tools
-        if: contains(matrix.target, 'linux-musl')        
-
-      # Install UPX for binary compression
-      - name: Install UPX
-        run: |
-          echo "ℹ️ Installing UPX for ${{ matrix.os }}..."
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            sudo apt update
-            sudo apt -y install upx-ucl
-          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            choco install upx
-          elif [[ "${{ matrix.os }}" == "macOS-latest" ]]; then
-            brew install upx
-          fi
+      - name: Install Rust Environment
+        uses: ./.github/actions/rust-env
+        with:
+          os: ${{ matrix.target }}
+          target: ${{ matrix.target }}
 
       - name: Build Example Server
         run: |
@@ -92,7 +56,11 @@ jobs:
       - name: Compress binary
         run: |
           echo "ℹ️ Compressing binary..."
-          upx --best --lzma --brute ./target/${{ matrix.target }}/release/server-${{ matrix.target }}
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            upx --best --lzma --brute ./target/${{ matrix.target }}/release/server-${{ matrix.target }}.exe
+          else
+            upx --best --lzma --brute ./target/${{ matrix.target }}/release/server-${{ matrix.target }}
+          fi
           echo "✅ Binary compression completed successfully."
       
       # Build Rust Microservices Crate
@@ -106,7 +74,7 @@ jobs:
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: bundle-${{ github.ref_name }}
+          name: bundle-${{ github.ref_name }}-${{ matrix.target }}
           path: |
             ./target/${{ matrix.target }}/release/server-${{ matrix.target }}
             ./target/${{ matrix.target }}/release/server-${{ matrix.target }}.exe

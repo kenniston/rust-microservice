@@ -93,7 +93,7 @@
 //!
 //! ## Example
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use rust_microservice::ServerApi; // api_server was renamed to ServerApi for better ergonomics
 //!
 //! #[ServerApi(
@@ -104,6 +104,16 @@
 //! )]
 //! async fn start() -> rust_microservice::Result<(), String> {}
 //! ```
+//!
+//! ---
+//!
+//! ⚠️ `IMPORTANT`: The `server_api` (*ServerApi in rust_microservice*), `database` and `secured`
+//! macros has been renamed or re-exported to improve ergonomics in the rust_microservice crate.
+//! This crate provides only the macro implementation. The public API is re-exported by the
+//! rust_microservice crate. Therefore, when using the macro in your project, prefer ServerApi
+//! instead of api_server.
+//!
+//! ---
 //!
 //! ## Generated Behavior
 //!
@@ -157,7 +167,7 @@
 //!
 //! ## Example
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use rust_microservice::secured;
 //! use actix_web::HttpResponse;
 //!
@@ -198,14 +208,14 @@
 //!
 //! The macro injects:
 //!
-//! ```rust
+//! ```rust,ignore
 //! let db = Server::global()
 //!     .database_with_name("name")?;
 //! ```
 //!
 //! ## Example
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use rust_microservice::database;
 //!
 //! #[database(name = "api", error = "UserError::DatabaseNotConfigured")]
@@ -254,7 +264,7 @@
 //!
 //! The security scheme is dynamically configured from:
 //!
-//! ```rust
+//! ```rust,ignore
 //! Server::global()?.settings().get_auth2_token_url()
 //! ```
 //!
@@ -362,7 +372,7 @@ use walkdir::DirEntry;
 ///
 /// #  Example of how a single key-value pair might appear in a macro:
 ///
-/// ```rust
+/// ```text
 /// timeout = 30
 /// ```
 struct KeyValue {
@@ -446,7 +456,7 @@ impl Parse for ArgList {
 ///
 /// Example of a minimal server bootstrap using this crate:
 ///
-/// ```rust
+/// ```rust,ignore
 /// use rust_microservice::ServerApi;
 ///
 /// #[ServerApi(
@@ -1063,7 +1073,7 @@ fn get_arg_string_value(arg_list: &ArgList, key: String, default: String) -> Str
 ///
 /// ### **`Single role`**:
 ///
-/// ```no_run
+/// ```rust,ignore
 /// use rust_microservice::secured;
 /// use actix_web::{HttpResponse, delete, get, http::StatusCode, post, put, web};
 ///
@@ -1076,7 +1086,7 @@ fn get_arg_string_value(arg_list: &ArgList, key: String, default: String) -> Str
 ///
 /// ### **`Any role`**:
 ///
-/// ```no_run
+/// ```rust,ignore
 /// use rust_microservice::secured;
 /// use actix_web::{HttpResponse, delete, get, http::StatusCode, post, put, web};
 ///
@@ -1093,7 +1103,7 @@ fn get_arg_string_value(arg_list: &ArgList, key: String, default: String) -> Str
 ///
 /// ### **`All roles`**:
 ///
-/// ```no_run
+/// ```rust,ignore
 /// use rust_microservice::secured;
 /// use actix_web::{HttpResponse, delete, get, http::StatusCode, post, put, web};
 ///
@@ -1290,7 +1300,7 @@ fn _get_security_roles(arg_list: &ArgList) -> proc_macro2::TokenStream {
 ///
 /// Example:
 ///
-/// ```rust
+/// ```rust,ignore
 /// use rust_microservice::{Server, database};
 /// use thiserror::Error;
 ///

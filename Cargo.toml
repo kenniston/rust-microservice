@@ -17,7 +17,7 @@ exclude = [".git", ".idea/", ".vscode/", "examples/"]
 memory-database = []
 
 [dependencies]
-server-macros = { version = "0.1.0", path = "server-macros/" }
+rust-microservice-macros = { version = "0.1.0", path = "rust-microservice-macros/" }
 clap = { version = "4.5.55", features = ["derive", "color", "help", "env"] }
 rust-embed = { version = "8.11.0", features = [
     "interpolate-folder-path",
@@ -68,7 +68,7 @@ reqwest-tracing = "0.7.0"
 reqwest-middleware = "0.5.1"
 
 [workspace]
-members = [".", "server-macros", "examples/server"]
+members = [".", "rust-microservice-macros", "examples/server"]
 
 [profile.release]
 strip = true

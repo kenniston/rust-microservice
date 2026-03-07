@@ -1,0 +1,58 @@
+name: Rust Build Macro Crate
+description: Build the procedural macro crate, to ensure that all components are correctly built.
+on:
+  workflow_call:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code
+      - uses: actions/checkout@v6
+
+      - name: Validate tag name
+        uses: ./.github/actions/check-tag
+        with:
+          target: linux
+          tag: ${{ github.ref_name }}
+
+      - name: Install Rust Environment
+        uses: ./.github/actions/rust-env
+        with:
+          os: ubuntu-latest
+          target: x86_64-unknown-linux-musl
+
+      - name: Check Documentation
+        run: |
+          echo "ℹ️ Running cargo test --doc for package 'rust-microservice-macros'..."
+          cargo test --doc -p rust-microservice-macros
+          echo "✅ Documentation tests passed successfully."
+
+      - name: Check Procedural Macro Crate
+        run: |
+          echo "ℹ️ Running cargo check for package 'rust-microservice-macros'..."
+          cargo publish --dry-run --allow-dirty -p rust-microservice-macros
+          echo "✅ Procedural macro crate checked successfully."
+
+      # Login to crates.io using the API token stored in GitHub Secrets
+      - name: cargo login
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |-
+          echo "ℹ️ Logging into crates.io..."
+          echo "TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}"
+          echo "$CARGO_REGISTRY_TOKEN" | cargo login
+
+      # Publish the crate to crates.io
+      - name: "cargo release publish"
+        run: |-
+          cargo publish \
+            --all-features \
+            --no-verify \
+            --allow-dirty \
+            -p rust-microservice-macros \
+            --dry-run

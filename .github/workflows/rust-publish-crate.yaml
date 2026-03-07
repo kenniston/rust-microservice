@@ -14,20 +14,21 @@ jobs:
 
       # Login to crates.io using the API token stored in GitHub Secrets
       - name: cargo login
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |-
-          echo ${{ secrets.CRATES_IO_API_TOKEN }} | cargo login
+          echo "ℹ️ Logging into crates.io..."
+          echo "TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}"
+          echo "$CARGO_REGISTRY_TOKEN" | cargo login
 
       # Publish the crate to crates.io
       - name: "cargo release publish"
         run: |-
-          cargo release \
-            publish \
-            --workspace \
+          cargo publish \
             --all-features \
-            --allow-branch HEAD \
-            --no-confirm \
             --no-verify \
-            --execute
+            --allow-dirty \
+            --dry-run
 
 
 

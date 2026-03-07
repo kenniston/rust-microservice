@@ -1,0 +1,59 @@
+name: Check Commit Tag
+description: Check if the commit has a tag
+
+inputs:
+  target:
+    description: 'The operating system to check the tag for'
+    required: true
+    default: 'linux'
+  tag:
+    description: 'The commit tag to check for'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check for tag on linux
+      if: contains(inputs.target, 'linux')
+      shell: bash
+      env:
+        RELEASE_NAME: ${{ inputs.tag }}
+        REGEX_PATTERN: "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+      run: |
+        echo "ℹ️ Validating tag name..."
+        if [[ "${RELEASE_NAME}" =~ ${REGEX_PATTERN} ]]; then
+          echo "✅ Tag name is valid: ${RELEASE_NAME}"
+        else
+          echo "❌ Invalid tag name: ${RELEASE_NAME}"
+          exit 1
+        fi
+
+    - name: Check for tag on windows
+      if: contains(inputs.target, 'windows')
+      shell: pwsh
+      env:
+        RELEASE_NAME: ${{ inputs.tag }}
+        REGEX_PATTERN: "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+      run: |
+        Write-Host "ℹ️ Validating tag name..."
+        if ($RELEASE_NAME -match $REGEX_PATTERN) {
+            Write-Host "✅ Tag name is valid: $RELEASE_NAME"
+        } else {
+            Write-Host "❌ Invalid tag name: $RELEASE_NAME"
+            exit 1
+        }
+
+    - name: Check for tag on macOS
+      if: contains(inputs.target, 'apple-darwin')
+      shell: bash
+      env:
+        RELEASE_NAME: ${{ inputs.tag }}
+        REGEX_PATTERN: "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+      run: |
+        echo "ℹ️ Validating tag name..."
+        if [[ "${RELEASE_NAME}" =~ ${REGEX_PATTERN} ]]; then
+          echo "✅ Tag name is valid: ${RELEASE_NAME}"
+        else
+          echo "❌ Invalid tag name: ${RELEASE_NAME}"
+          exit 1
+        fi

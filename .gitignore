@@ -10,6 +10,7 @@
 .actrc.json
 .artifacts
 .release-artifacts
+.secrets
 
 ### env files ###
 .env

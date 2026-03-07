@@ -1,0 +1,72 @@
+name: Rust Environment Setup
+description: Setup the environment for the Rust build
+
+inputs:
+  os:
+    description: 'The operating system to set up the Rust environment for'
+    required: true
+    default: 'ubuntu-latest'
+  target:
+    description: 'The Rust target triple to set up the environment for'
+    required: true
+    default: 'x86_64-unknown-linux-musl'
+
+runs:
+    using: 'composite'
+    steps:
+      # Setup the Rust toolchain
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+          target: ${{ inputs.target }}
+
+      # Configure Rust for linux and macOS targets
+      - name: Setup Rust Target Linux
+        shell: bash
+        run: |
+          echo "ℹ️ Setting up Rust target for OS: ${{ inputs.os }} Target: ${{ inputs.target }}..."
+          rustup target add ${{ inputs.target }}
+        if: contains(inputs.target, 'linux') || contains(inputs.target, 'apple-darwin')
+
+      # Configure Rust for Windows targets
+      - name: Setup Rust Target Windows
+        shell: pwsh
+        run: |
+          Write-Host "ℹ️ Setting up Rust target for OS: ${{ inputs.os }} Target: ${{ inputs.target }}..."
+          rustup target add ${{ inputs.target }}
+        if: contains(inputs.target, 'windows')
+
+      # Install musl for Linux targets to enable static linking
+      - name: Install musl
+        shell: bash  
+        run: |
+          echo "ℹ️ Installing musl for ${{ inputs.os }}..."
+          sudo apt update
+          sudo apt -y install musl-tools
+        if: contains(inputs.target, 'linux-musl')
+
+      # Install UPX for binary compression on Linux targets
+      - name: Install UPX Linux
+        shell: bash
+        run: |
+          echo "ℹ️ Installing UPX for ${{ inputs.os }}..."
+          sudo apt update
+          sudo apt -y install upx-ucl
+        if: contains(inputs.target, 'linux-musl')
+
+      # Install UPX for Windows targets
+      - name: Install UPX Windows
+        shell: pwsh
+        run: |
+          Write-Host "ℹ️ Installing UPX for ${{ inputs.os }}..."
+          choco install upx
+        if: contains(inputs.target, 'windows')
+
+      # Install UPX for macOS targets
+      - name: Install UPX macOS
+        shell: bash
+        run: |
+          echo "ℹ️ Installing UPX for ${{ inputs.os }}..."
+          brew install upx
+        if: contains(inputs.target, 'apple-darwin')

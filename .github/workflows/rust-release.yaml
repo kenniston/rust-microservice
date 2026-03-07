@@ -20,18 +20,13 @@ jobs:
 
       # Download release artifacts from the build job
       - name: Download Release Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v8
         with:
-          name: bundle-${{ github.ref_name }}
+          repository: kenniston/rust-microservice
+          name: bundle-${{ github.ref_name }}-${{ matrix.target }}
           path: ./.release-artifacts
 
-      # Extract the release artifact from the build job
-      - name: Extract release artifacts
-        run: |
-          echo "ℹ️ Extracting release artifacts..."
-          unzip ./.release-artifacts/bundle-${{ github.ref_name }}.zip -d ./.release-artifacts
-          echo "✅ Release artifacts extracted successfully."
-
+      # Extract current release notes from CHANGELOG.md
       - name: Extract current release notes
         run: |
           echo "ℹ️ Extracting current release notes from CHANGELOG.md..."
@@ -47,5 +42,5 @@ jobs:
           body_path: RELEASE.md
           repository: kenniston/rust-microservice
           files: |
-            ./.release-artifacts/target/${{ matrix.target }}/release/server-${{ matrix.target }}
-            ./.release-artifacts/target/${{ matrix.target }}/release/server-${{ matrix.target }}.exe
+            ./.release-artifacts/server-${{ matrix.target }}
+            ./.release-artifacts/server-${{ matrix.target }}.exe

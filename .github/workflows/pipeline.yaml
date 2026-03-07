@@ -10,7 +10,14 @@ on:
       - main
 
 jobs:
+  build-publish-macro-crate:
+    # Build and publish the procedural macro crate to ensure it compiles correctly
+    uses: ./.github/workflows/rust-build-publish-macro-crate.yaml
+    secrets:
+      inherit
+
   build:
+    needs: build-publish-macro-crate
     # Run the build job on multiple operating systems and targets
     uses: ./.github/workflows/rust-build.yaml
 
@@ -24,10 +31,10 @@ jobs:
     # Publish release artifacts to GitHub Releases
     uses: ./.github/workflows/rust-release.yaml
 
-  # deploy:
-  #   needs: build
-  #   # Deploy the crate to crates.io
-  #   uses: ./.github/workflows/rust-deploy.yaml
+  publish:
+    needs: build
+    # Deploy the crate to crates.io
+    uses: ./.github/workflows/rust-deploy.yaml
     
     
 

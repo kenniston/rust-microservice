@@ -38,12 +38,12 @@ root
 
 ```toml
 [package]
-name = "server-macros"
+name = "rust-microservice-macros"
 version = "0.1.0"
 edition = "2024"
 description = "A set of macros for generating code for the microservices framework."
-documentation = "https://docs.rs/server-macros"
-repository = "https://github.com/kenniston/server-framework/server-macros"
+documentation = "https://docs.rs/rust-microservice-macros"
+repository = "https://github.com/kenniston/server-framework/rust-microservice-macros"
 readme = "README.md"
 license = "MIT"
 keywords = ["code-gen", "macros", "initialization", "mapper", "api"]

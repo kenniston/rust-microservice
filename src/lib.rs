@@ -134,7 +134,7 @@ pub use server::ServerError;
 /// )]
 /// async fn start_server() -> rust_microservice::Result<(), String> {}
 /// ```
-pub use server_macros::api_server as ServerApi;
+pub use rust_microservice_macros::api_server as ServerApi;
 
 /// # 🛢️ Database Macro
 ///
@@ -181,7 +181,7 @@ pub use server_macros::api_server as ServerApi;
 ///     Ok(())
 /// }
 /// ```
-pub use server_macros::database;
+pub use rust_microservice_macros::database;
 
 /// # 🔐 Secured Macro
 ///
@@ -293,4 +293,4 @@ pub use server_macros::database;
 ///    HttpResponse::Ok().finish()
 /// }
 /// ```
-pub use server_macros::secured;
+pub use rust_microservice_macros::secured;
