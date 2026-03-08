@@ -5,7 +5,7 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
-
+ 
 jobs:
   build-publish-macro-crate:
     # Build and publish the procedural macro crate to ensure it compiles correctly
@@ -31,7 +31,7 @@ jobs:
   publish:
     needs: build
     # Deploy the crate to crates.io
-    uses: ./.github/workflows/rust-deploy.yaml
+    uses: ./.github/workflows/rust-publish-crate.yaml
     
     
 
