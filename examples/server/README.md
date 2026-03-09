@@ -3,7 +3,7 @@
 ![rust](https://badgen.net/badge/Rust%20Edition/2024/red?scale=1.2)
 ![rust](https://badgen.net/badge/Rust/1.91.1/blue?scale=1.2)
 ![cargo](https://badgen.net/badge/Cargo/1.91.1/gray?scale=1.2)
-![spring-boot](https://badgen.net/badge/Version/0.1.2/green?scale=1.2)
+![spring-boot](https://badgen.net/badge/Version/0.1.3/green?scale=1.2)
 
 ## About the Project
 

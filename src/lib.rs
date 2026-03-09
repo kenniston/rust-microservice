@@ -65,7 +65,7 @@
 //! Add the crate dependency in your project's `Cargo.toml`:
 //!
 //! ```toml
-//! rust-microservice = "0.1.2"
+//! rust-microservice = "0.1.3"
 //! ```
 #![deny(clippy::unwrap_used)]
 #![deny(clippy::redundant_clone)]

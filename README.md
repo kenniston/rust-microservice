@@ -7,7 +7,7 @@
 
   ![rust](https://badgen.net/badge/Rust%20Edition/2024/red?scale=1.0)
   ![rust](https://badgen.net/badge/Rust/1.91.1/blue?scale=1.0)
-  ![crate](https://badgen.net/badge/crates.io/v0.1.2/orange?scale=1.0)
+  ![crate](https://badgen.net/badge/crates.io/v0.1.3/orange?scale=1.0)
   <!--[![build status](https://github.com/kenniston/rust-microservice/actions/workflows/rust.yml/badge.svg)](https://github.com/kenniston/rust-microservice/actions/workflows/rust.yml)-->
   [![GitHub stars](https://img.shields.io/github/stars/kenniston/rust-microservice.svg?style=social&label=Star&maxAge=1)](https://github.com/kenniston/rust-microservice/)
   <br>Support us with a ⭐ !
@@ -104,7 +104,7 @@ Add the Rust Microservice to Cargo.toml:
 ```toml
 
 [dependencies]
-rust-microservice = "0.1.2"
+rust-microservice = "0.1.3"
 
 ```
 
@@ -675,7 +675,7 @@ to project requirements.
 - `tokio` – Asynchronous runtime for non-blocking operations.
 - `sea-orm` – Async and dynamic ORM for database access.
 - `utoipa` – OpenAPI specification generation.
-- `utoipa-swagger-ui` *(actix-web feature)* – Embedded Swagger UI for API exploration.
+- `utoipa-swagger-ui` *(vendored and actix-web feature)* – Embedded Swagger UI for API exploration.
 - `google-cloud-bigquery` – Client library for Google BigQuery integration.
 - `base64` – Base64 encoding and decoding utilities.
 - `tracing` – Structured, event-based logging and diagnostics.

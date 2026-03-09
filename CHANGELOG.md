@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.3] - Offline Swagger UI via vendored utoipa-swagger-ui
+
+### Changed
+
+- Enabled the `vendored` feature on the `utoipa-swagger-ui` dependency on crate `cargo.toml`
+  and `cargo.toml` in `examples/server`.
+
 ## [0.1.2] - Offline Swagger UI via vendored utoipa-swagger-ui
 
 ### Changed

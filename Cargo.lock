@@ -4149,7 +4149,7 @@ dependencies = [
 
 [[package]]
 name = "rust-microservice"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "actix-cors",
  "actix-web",
@@ -4716,7 +4716,7 @@ dependencies = [
 
 [[package]]
 name = "server"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "actix-web",
  "asserting",

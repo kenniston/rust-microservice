@@ -1,6 +1,6 @@
 [package]
 name = "server"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 description = "A microservice Web API using the MVC pattern."
 documentation = "https://docs.rs/rust-server-api"
@@ -21,7 +21,7 @@ name = "server_lib"
 path = "src/lib.rs"
 
 [dependencies]
-rust-microservice = { path = "../../", version = "0.1.2" }
+rust-microservice = { path = "../../", version = "0.1.3" }
 rust-embed = { version = "8.9.0", features = [
     "interpolate-folder-path",
     "debug-embed",
