@@ -1,6 +1,6 @@
 [package]
 name = "server"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2024"
 description = "A microservice Web API using the MVC pattern."
 documentation = "https://docs.rs/rust-server-api"
@@ -21,7 +21,7 @@ name = "server_lib"
 path = "src/lib.rs"
 
 [dependencies]
-rust-microservice = { path = "../../", version = "0.1.0" }
+rust-microservice = { path = "../../", version = "0.1.2" }
 rust-embed = { version = "8.9.0", features = [
     "interpolate-folder-path",
     "debug-embed",
@@ -38,7 +38,7 @@ sea-orm = { version = "2.0.0-rc.32", features = [
     "debug-print",
 ] }
 utoipa = "5.4.0"
-utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web"] }
+utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web", "vendored"] }
 google-cloud-bigquery = { package = "gcloud-bigquery", version = "1.5.0" }
 base64 = "0.22.1"
 tracing = "0.1.44"

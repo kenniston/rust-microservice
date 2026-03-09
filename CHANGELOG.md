@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.2] - Offline Swagger UI via vendored utoipa-swagger-ui
+
+### Changed
+
+- Enabled the `vendored` feature on the `utoipa-swagger-ui` dependency, bundling all Swagger UI 
+  static assets directly into the compiled binary. This removes the runtime dependency on an 
+  external CDN, allowing the interactive API documentation to load fully offline and in 
+  restricted-network environments.
+
+## [0.1.1] - Publish a new version to crates.io
+
+### Changed
+
+- Corrected the macro crate documentation and published a new version to `crates.io`.
+
 ## [0.1.0] - Initial Release
 
 ### Added

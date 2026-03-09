@@ -1,6 +1,6 @@
 [package]
 name = "rust-microservice"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 description = "A microservices framework in Rust whichs provides common functionalities for developing Web APIs."
 documentation = "https://docs.rs/rust-microservice"

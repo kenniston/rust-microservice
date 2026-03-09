@@ -131,7 +131,7 @@ impl Server {
     /// ```rust
     /// use rust_microservice::Server;
     ///
-    /// let server = Server::new("0.1.0".to_string(), None);
+    /// let server = Server::new("0.1.2".to_string(), None);
     /// Server::set_global(server);
     /// ```
     pub fn set_global(server: Server) {
@@ -528,7 +528,7 @@ impl Server {
     /// use rust_microservice::Server;
     ///
     /// async fn start_server() -> rust_microservice::Result<(), String> {
-    ///     let server = Server::new("0.1.0".to_string(), None)
+    ///     let server = Server::new("0.1.2".to_string(), None)
     ///         .init()
     ///         .await
     ///         .map_err(|e|e.to_string())?
