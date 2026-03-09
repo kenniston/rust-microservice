@@ -1,6 +1,6 @@
 [package]
 name = "rust-microservice"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "A microservices framework in Rust whichs provides common functionalities for developing Web APIs."
 documentation = "https://docs.rs/rust-microservice"
@@ -17,7 +17,7 @@ exclude = [".git", ".idea/", ".vscode/", "examples/"]
 memory-database = []
 
 [dependencies]
-rust-microservice-macros = { version = "0.1.0", path = "rust-microservice-macros/" }
+rust-microservice-macros = { version = "0.1.1", path = "rust-microservice-macros/" }
 clap = { version = "4.5.55", features = ["derive", "color", "help", "env"] }
 rust-embed = { version = "8.11.0", features = [
     "interpolate-folder-path",
